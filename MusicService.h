@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <print>
+#include <mutex>
 
 
 
@@ -16,11 +17,18 @@ class MusicService {
 	MusicRepository musicRepository{};
 	std::optional<Song> currentSong{};
 
+	std::mutex playerMutex;
+
 	void playSong(Song song) {
+		std::lock_guard<std::mutex> lock(playerMutex);
+		std::println("Mutex aqcuired");
+
 		currentSong = std::move(song);
 
-		player.play_sound(currentSong->path, [](AudioPlayer& player) {
-			std::printf("Song is done playing\n");
+		player.play_sound(currentSong->path, [&] {
+			std::println("{} by {} is done playing", currentSong->name, currentSong->artist);
+
+			playNextSong();
 		});
 	}
 
@@ -42,19 +50,23 @@ class MusicService {
 			return songs[0];
 		}
 		else {
-			int index = std::distance(songs.begin(), it);
-			int nextIndex = (index + 1) % songs.size();
+			auto index = std::distance(songs.begin(), it);
+			auto nextIndex = (index + 1) % songs.size();
 			return songs[nextIndex];
 		}
 		
 	}
-	
-public:
-	void autoPlay() {
+
+	void playNextSong() {
 		auto songs = musicRepository.fetchAllSongs();
-		
+
 		const Song& toPlay = songToPlay(songs);
 		std::println("Playing {} by {}", toPlay.name, toPlay.artist);
 		playSong(toPlay);
+	}
+	
+public:
+	void autoPlay() {
+		playNextSong();
 	}
 };

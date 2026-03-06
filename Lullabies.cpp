@@ -10,4 +10,8 @@ int main(int argc, char** argv)
     musicPlayer.autoPlay();
 
     getchar();
+
+    musicPlayer.autoPlay();
+
+    getchar();
 }

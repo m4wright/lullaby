@@ -15,6 +15,7 @@ class MusicRepository {
 public:
 	std::vector<Song> fetchAllSongs() {
 		std::vector<Song> result {
+			{.name = "Long Chirp", .artist = "A Test", .path = "C:\\Users\\m4_wr\\Downloads\\longchirp-88445.mp3"},
 			{.name = "Harvard", .artist = "Harvard", .path = "C:\\Users\\m4_wr\\Music\\localmusic\\harvard.mp3"},
 			{.name = "Complicated", .artist = "Mac Miller", .path = "C:\\Users\\m4_wr\\Music\\localmusic\\Mac Miller\\02. Complicated.mp3"},
 			{.name = "Circles", .artist = "Mac Miller", .path = "C:\\Users\\m4_wr\\Music\\localmusic\\Mac Miller\\01. Circles.mp3"},

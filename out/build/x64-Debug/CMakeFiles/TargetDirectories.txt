@@ -1,3 +1,0 @@
-C:/Users/m4_wr/source/repos/Lullabies/Lullabies/out/build/x64-Debug/CMakeFiles/Lullabies.dir
-C:/Users/m4_wr/source/repos/Lullabies/Lullabies/out/build/x64-Debug/CMakeFiles/edit_cache.dir
-C:/Users/m4_wr/source/repos/Lullabies/Lullabies/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir

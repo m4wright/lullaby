@@ -13,7 +13,7 @@ struct Song {
 
 class MusicRepository {
 public:
-	std::vector<Song> fetchAllSongs() {
+	std::vector<Song> fetchAllSongs() const {
 		std::vector<Song> result {
 			{.name = "Long Chirp", .artist = "A Test", .path = "C:\\Users\\m4_wr\\Downloads\\longchirp-88445.mp3"},
 			{.name = "Harvard", .artist = "Harvard", .path = "C:\\Users\\m4_wr\\Music\\localmusic\\harvard.mp3"},

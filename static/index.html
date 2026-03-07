@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Critical for mobile layout -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- Scrollable Song List -->
+        <header class="app-header">
+            <h2>Song Library</h2>
+        </header>
+
+        <main class="song-list-container">
+            <ul id="song-list" class="song-list">
+                <!-- Songs populated by JavaScript -->
+            </ul>
+        </main>
+
+        <!-- Fixed Bottom Player Bar -->
+        <footer class="music-player">
+
+            <!-- Optional current song display (mobile friendly) -->
+            <!--        <div id="song-info" class="song-info">-->
+            <!--            <div id="current-song" class="current-song">No song selected</div>-->
+            <!--        </div>-->
+
+            <div class="player-controls-row">
+
+                <div class="controls">
+                    <button id="prev-btn" class="control-btn">⏮</button>
+                    <button id="play-pause-btn" class="control-btn play-pause">⏯</button>
+                    <button id="next-btn" class="control-btn">⏭</button>
+                </div>
+
+                <div class="playback-options">
+                    <button id="shuffle-btn" class="control-btn">🔀</button>
+                    <button id="repeat-btn" class="control-btn">🔁</button>
+                </div>
+
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

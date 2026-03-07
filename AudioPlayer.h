@@ -7,6 +7,12 @@
 #include <optional>
 #include <string>
 #include <functional>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <utility>
+#include <atomic>
 
 extern "C"
 {
@@ -109,28 +115,150 @@ class AudioPlayer {
     AudioEngine engine{};
     std::unique_ptr<Sound> sound;
     std::function<void(void)> callback = [] {};
-	
+
+    enum class CmdType { Play, Pause, Resume, Next, Stop };
+    struct Command {
+        CmdType type = CmdType::Stop;
+        std::string path;
+        std::function<void()> callback;
+        Command() = default;
+        Command(CmdType t, std::string p = {}, std::function<void()> cb = {}) : type(t), path(std::move(p)), callback(std::move(cb)) {}
+    };
+
+    std::thread worker;
+    std::mutex mtx;
+    std::condition_variable cv;
+    std::queue<Command> queue;
+    std::atomic<bool> nextRequested{false};
+
 public:
-	void play_sound(const std::string& path, std::function<void(void)> fn) {
-        sound = std::make_unique<Sound>(engine, path);
-        //this->callback = fn;
-        sound->start();
+    AudioPlayer() {
+        worker = std::thread([this] { worker_loop(); });
+    }
 
-		ma_sound_set_end_callback(&sound->get(), [](void* userData, ma_sound* sound) {
-			AudioPlayer* player = static_cast<AudioPlayer*>(userData);
-            player->callback();
-		}, static_cast<void*>(this));
-	}
+    ~AudioPlayer() {
+        // Signal the worker to stop
+        {
+            std::lock_guard lock(mtx);
+            queue.emplace(Command{CmdType::Stop});
+        }
+        cv.notify_one();
+        if (worker.joinable()) worker.join();
+    }
 
-	void pause() {
+    // Enqueue a request to play the given path. The worker thread will own
+    // the Sound instance and will invoke the provided callback when the
+    // sound ends (the callback is invoked on the worker thread).
+    void play_sound(const std::string& path, std::function<void(void)> fn) {
+        {
+            std::lock_guard lock(mtx);
+            queue.emplace(Command{CmdType::Play, path, std::move(fn)});
+        }
+        cv.notify_one();
+    }
+
+    std::string_view toggle() {
+
+        std::string_view result;
+
+        std::lock_guard lock(mtx);
+        if (sound) {
+            if (sound->isPlaying()) {
+				result = "Song paused";
+                queue.emplace(Command{CmdType::Pause});
+            } else {
+				result = "Song resumed";
+                queue.emplace(Command{CmdType::Resume});
+			}
+        }
+        else {
+            result = "Nothing was playing";
+        }
+		cv.notify_one();
+
+        return result;
+    }
+
+    void pause() {
+        std::lock_guard lock(mtx);
+        queue.emplace(Command{CmdType::Pause});
+        cv.notify_one();
+    }
+
+    void resume() {
+        std::lock_guard lock(mtx);
+        queue.emplace(Command{CmdType::Resume});
+        cv.notify_one();
+    }
+
+private:
+    void worker_loop() {
+        for (;;) {
+            Command cmd;
+            {
+                std::unique_lock lock(mtx);
+                cv.wait(lock, [this]{ return !queue.empty() || nextRequested.load(std::memory_order_acquire); });
+
+                if (nextRequested.exchange(false, std::memory_order_acq_rel)) {
+                    cmd = Command{CmdType::Next};
+                } else {
+                    cmd = std::move(queue.front());
+                    queue.pop();
+                }
+            }
+
+            if (cmd.type == CmdType::Stop) {
+                break;
+            }
+
+            if (cmd.type == CmdType::Play) {
+                // stop and destroy any existing sound first
+                if (sound) {
+                    sound->stop();
+                    sound.reset();
+                }
+
+                // store callback to invoke when this sound ends
+                callback = cmd.callback ? cmd.callback : []{};
+
+                // create and start the new sound on the worker thread
+                sound = std::make_unique<Sound>(engine, cmd.path);
+
+                // The end callback is invoked from miniaudio's audio thread.
+                // Keep it minimal: just enqueue a Next command for the worker
+                // thread to process.
+                ma_sound_set_end_callback(&sound->get(), [](void* userData, ma_sound* /*s*/) {
+                    AudioPlayer* player = static_cast<AudioPlayer*>(userData);
+                    // Only set an atomic flag and notify the worker. Avoid heap
+                    // allocations / locking from the audio thread.
+                    player->nextRequested.store(true, std::memory_order_release);
+                    player->cv.notify_one();
+                }, this);
+
+                sound->start();
+            }
+            else if (cmd.type == CmdType::Next) {
+                // Invoke the stored callback on the worker thread. The
+                // callback may enqueue further commands (e.g. play_sound)
+                // which is safe.
+                try {
+                    callback();
+                } catch (...) {
+                    // swallow exceptions to keep worker alive
+                }
+            }
+            else if (cmd.type == CmdType::Pause) {
+                if (sound) sound->stop();
+            }
+            else if (cmd.type == CmdType::Resume) {
+                if (sound) sound->start();
+            }
+        }
+
+        // Clean up sound if any
         if (sound) {
             sound->stop();
+            sound.reset();
         }
-	}
-
-	void resume() {
-        if (sound) {
-            sound->start();
-        }
-	}
+    }
 };

@@ -16,7 +16,8 @@ void to_json(nlohmann::json& j, const Song& song) {
 void startServer(MusicService* musicService, int port) {
 	httplib::Server server;
 
-	server.set_mount_point("/", "/home/mathew/Documents/lullaby/static");
+	//server.set_mount_point("/", "/home/mathew/Documents/lullaby/static");
+	server.set_mount_point("/", "C:\\Users\\m4_wr\\source\\repos\\Lullabies\\Lullabies\\static");
 
 	using json = nlohmann::json;
 

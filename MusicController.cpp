@@ -1,16 +1,10 @@
 #include "MusicController.h"
+#include "MusicSerializer.h"
 
-#include "json.hpp"
 #include "httplib.h"
 
 #include <string>
 #include <print>
-
-
-void to_json(nlohmann::json& j, const Song& song) {
-	j["name"] = song.name;
-	j["artist"] = song.artist;
-}
 
 
 void startServer(MusicService& musicService, int port, const std::string& mount_point) {
@@ -18,15 +12,10 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 
 	server.set_mount_point("/", mount_point);
 
-	using json = nlohmann::json;
-
 	server.Get("/music", [&musicService](const httplib::Request&, httplib::Response& response) {
 		auto songs = musicService.getAllSongs();
-
-		json result = songs;
-
-		response.set_content(result.dump(), "application/json");
-		});
+		response.set_content(to_string(songs), "application/json");
+	});
 
 	server.Get("/music/media/play", [&musicService](const httplib::Request& request, httplib::Response& response) {
 		if (!(request.has_param("name") && request.has_param("artist"))) {
@@ -47,21 +36,21 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 			response.set_content("Could not find " + name + " by " + artist, "text/plain");
 			response.status = 400;
 		}
-		});
+	});
 
 	server.Get("/music/media/toggle_pause", [&musicService](const httplib::Request& request, httplib::Response& response) {
 		response.set_content(std::string(musicService.toggle()), "text/plain");
-		});
+	});
 
 	server.Get("/music/media/play_next", [&musicService](const httplib::Request& request, httplib::Response& response) {
 		Song song = musicService.playNextSong();
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
-		});
+	});
 
 	server.Get("/music/media/play_previous", [&musicService](const httplib::Request& request, httplib::Response& response) {
 		Song song = musicService.playPreviousSong();
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
-		});
+	});
 
 	std::println("Starting to listen on port {}", port);
 	server.listen("0.0.0.0", port);

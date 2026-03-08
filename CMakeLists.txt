@@ -10,4 +10,15 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O1" CACHE STRING "C++ compiler flags for Release b
 # Add source to this project's executable.
 add_executable (Lullabies "Lullabies.cpp" "AudioPlayer.cpp" "MusicController.cpp" "Song.h" "MusicRepository.cpp" "MusicService.cpp" "MusicSerializer.h" "MusicSerializer.cpp")
 
-# TODO: Add tests and install targets if needed.
+if (WIN32)
+	add_library(sqlite3 winlibs/sqlite3.c)
+
+	target_include_directories(sqlite3 PUBLIC winlibs)
+
+	target_link_libraries(Lullabies PRIVATE sqlite3)
+
+else()
+	find_package(SQLite3 REQUIRED)
+
+	target_link_libraries(Lullabies PRIVATE SQLite::SQLite3)
+endif()

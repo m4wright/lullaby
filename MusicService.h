@@ -12,7 +12,7 @@
 
 class MusicService {
 	AudioPlayer player{};
-	MusicRepository musicRepository{};
+	MusicRepository musicRepository;
 	std::optional<Song> currentSong{};
 
 	struct Helper;
@@ -20,6 +20,8 @@ class MusicService {
 	Song playNextSong(bool forward);
 	
 public:
+
+	MusicService(MusicRepository&& repository) : musicRepository(std::move(repository)) {}
 
 	Song playNextSong() {
 		return playNextSong(true);
@@ -52,7 +54,7 @@ public:
 		return musicRepository;
 	}
 
-	std::vector<Song> getAllSongs() const {
+	std::vector<Song> getAllSongs() {
 		return musicRepository.fetchAllSongs();
 	}
 };

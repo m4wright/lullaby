@@ -1,31 +1,19 @@
 ﻿#include "MusicController.h"
 #include "MusicService.h"
 
-#include <print>
 
-
+#include <cstdlib>
 
 int main(int argc, char** argv)
 {
     
     MusicService musicPlayer{};
 
-    std::thread serverThread(startServer, &musicPlayer);
+    int port = 9095;
 
-    musicPlayer.autoPlay();
-
-    for (;;) {
-		char c = getchar();
-
-        if (c == 'p') {
-			musicPlayer.pause();
-		}
-        else if (c == 'r') {
-            musicPlayer.resume();
-        }
-        else if (c == 'q')
-        {
-			break;
-        }
+    if (argc > 1) {
+	port = atoi(argv[1]);
     }
+
+    startServer(&musicPlayer, port);
 }

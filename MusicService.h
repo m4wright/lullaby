@@ -29,7 +29,7 @@ class MusicService {
 
 	const Song& songToPlay(const std::vector<Song>& songs, bool forward) {
 		if (songs.empty()) {
-			throw std::exception("There are no songs to play");
+			throw std::runtime_error("There are no songs to play");
 		}
 		if (!currentSong) {
 			return songs[0];

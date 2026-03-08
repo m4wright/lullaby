@@ -13,6 +13,8 @@
 #include <queue>
 #include <utility>
 #include <atomic>
+#include <print>
+
 
 extern "C"
 {
@@ -60,6 +62,7 @@ public:
         
             
         if (result != MA_SUCCESS) {
+	    std::println("Failed to initialize ma_sound with error code {}", static_cast<int>(result));
             throw std::runtime_error("Failed to initialize ma_sound");
         }
 

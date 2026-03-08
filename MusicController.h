@@ -13,10 +13,10 @@ void to_json(nlohmann::json& j, const Song& song) {
 }
 
 
-void startServer(MusicService* musicService) {
+void startServer(MusicService* musicService, int port) {
 	httplib::Server server;
 
-	server.set_mount_point("/", "../../../static");
+	server.set_mount_point("/", "/home/mathew/Documents/lullaby/static");
 
 	using json = nlohmann::json;
 
@@ -62,5 +62,6 @@ void startServer(MusicService* musicService) {
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
 		});
 
-	server.listen("localhost", 9095);
+	std::println("Starting to listen on port {}", port);
+	server.listen("0.0.0.0", port);
 }

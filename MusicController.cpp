@@ -12,7 +12,7 @@ void to_json(nlohmann::json& j, const Song& song) {
 }
 
 
-void startServer(MusicService* musicService, int port, const std::string& mount_point) {
+void startServer(MusicService& musicService, int port, const std::string& mount_point) {
 	httplib::Server server;
 
 	server.set_mount_point("/", mount_point);
@@ -20,7 +20,7 @@ void startServer(MusicService* musicService, int port, const std::string& mount_
 	using json = nlohmann::json;
 
 	server.Get("/music", [&musicService](const httplib::Request&, httplib::Response& response) {
-		auto songs = musicService->getAllSongs();
+		auto songs = musicService.getAllSongs();
 
 		json result = songs;
 
@@ -37,7 +37,7 @@ void startServer(MusicService* musicService, int port, const std::string& mount_
 		std::string name = request.get_param_value("name");
 		std::string artist = request.get_param_value("artist");
 
-		bool playing = musicService->play(name, artist);
+		bool playing = musicService.play(name, artist);
 
 		if (playing) {
 			response.set_content("Playing " + name + " by " + artist, "text/plain");
@@ -49,16 +49,16 @@ void startServer(MusicService* musicService, int port, const std::string& mount_
 		});
 
 	server.Get("/music/media/toggle_pause", [&musicService](const httplib::Request& request, httplib::Response& response) {
-		response.set_content(std::string(musicService->toggle()), "text/plain");
+		response.set_content(std::string(musicService.toggle()), "text/plain");
 		});
 
 	server.Get("/music/media/play_next", [&musicService](const httplib::Request& request, httplib::Response& response) {
-		Song song = musicService->playNextSong();
+		Song song = musicService.playNextSong();
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
 		});
 
 	server.Get("/music/media/play_previous", [&musicService](const httplib::Request& request, httplib::Response& response) {
-		Song song = musicService->playPreviousSong();
+		Song song = musicService.playPreviousSong();
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
 		});
 

@@ -40,5 +40,5 @@ int main(int argc, char** argv)
 	int port = determine_port(argc, argv);
     std::string mount_point = determine_mount_point(argc, argv);
 
-    startServer(&musicPlayer, port, mount_point);
+    startServer(musicPlayer, port, mount_point);
 }

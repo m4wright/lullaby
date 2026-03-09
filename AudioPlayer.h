@@ -26,10 +26,10 @@ public:
     // sound ends (the callback is invoked on the worker thread).
     void play_sound(const std::string& path, std::function<void(void)> fn);
 
-    // Toggle between pause/resume for the current sound. Returns a
-    // human-readable status string (string_view refers to a static literal).
-    std::string_view toggle();
+    bool toggle();
 
     void pause();
     void resume();
+
+	bool isPlaying();
 };

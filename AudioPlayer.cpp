@@ -90,19 +90,26 @@ struct AudioPlayer::Impl {
         cv.notify_one();
     }
 
-    std::string_view toggle() {
-        std::string_view result;
+    bool toggle() {
+        bool isPlaying;
+
         std::lock_guard lock(mtx);
         if (sound) {
-            if (sound->isPlaying()) { result = "Song paused"; queue.emplace(Command{CmdType::Pause}); }
-            else { result = "Song resumed"; queue.emplace(Command{CmdType::Resume}); }
-        } else { result = "Nothing was playing"; }
+            if (sound->isPlaying()) { isPlaying = false; queue.emplace(Command{CmdType::Pause}); }
+            else { isPlaying = true; queue.emplace(Command{CmdType::Resume}); }
+        }
+        else { isPlaying = false; }
         cv.notify_one();
-        return result;
+        return isPlaying;
     }
 
     void pause() { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Pause}); cv.notify_one(); }
     void resume() { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Resume}); cv.notify_one(); }
+
+    bool isPlaying() {
+        std::lock_guard lock(mtx);
+		return sound.has_value() && sound->isPlaying();
+    }
 
     void worker_loop() {
         for (;;) {
@@ -136,6 +143,7 @@ struct AudioPlayer::Impl {
 AudioPlayer::AudioPlayer() : impl(std::make_unique<Impl>()) {}
 AudioPlayer::~AudioPlayer() = default;
 void AudioPlayer::play_sound(const std::string& path, std::function<void(void)> fn) { impl->play_sound(path, std::move(fn)); }
-std::string_view AudioPlayer::toggle() { return impl->toggle(); }
+bool AudioPlayer::toggle() { return impl->toggle(); }
 void AudioPlayer::pause() { impl->pause(); }
 void AudioPlayer::resume() { impl->resume(); }
+bool AudioPlayer::isPlaying() { return impl->isPlaying(); }

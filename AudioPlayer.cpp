@@ -9,6 +9,7 @@
 #include <utility>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <print>
 
 extern "C" {
@@ -17,15 +18,15 @@ extern "C" {
 
 namespace {
     class AudioEngine {
-        std::unique_ptr<ma_engine> engine = std::make_unique<ma_engine>();
+        ma_engine engine{};
     public:
         AudioEngine() {
-            if (ma_engine_init(nullptr, engine.get()) != MA_SUCCESS) {
+            if (ma_engine_init(nullptr, &engine) != MA_SUCCESS) {
                 throw std::runtime_error("Failed to init engine");
             }
         }
-        ma_engine& get() noexcept { return *engine; }
-        ~AudioEngine() { ma_engine_uninit(engine.get()); }
+        ma_engine* get() noexcept { return &engine; }
+        ~AudioEngine() { ma_engine_uninit(&engine); }
         AudioEngine(const AudioEngine&) = delete;
         AudioEngine& operator=(const AudioEngine&) = delete;
     };
@@ -33,22 +34,30 @@ namespace {
     class Sound {
         bool isInitialized = false;
         ma_sound sound{};
+
     public:
         Sound() = delete;
         Sound(AudioEngine& engine, const std::string& filePath) {
-            ma_result result = ma_sound_init_from_file(&engine.get(), filePath.c_str(), 0, nullptr, nullptr, &sound);
+            ma_result result = ma_sound_init_from_file(engine.get(), filePath.c_str(), 0, nullptr, nullptr, &sound);
             if (result != MA_SUCCESS) {
                 std::println("Failed to initialize ma_sound with error code {}", static_cast<int>(result));
                 throw std::runtime_error("Failed to initialize ma_sound");
             }
             isInitialized = true;
         }
-        ~Sound() { if (isInitialized) ma_sound_uninit(&sound); }
-        ma_sound& get() { return sound; }
+
+        ~Sound() {
+            if (isInitialized) {
+                ma_sound_uninit(&sound);
+            }
+        }
+        ma_sound* get() { return &sound; }
+
         Sound(const Sound&) = delete;
         Sound& operator=(const Sound&) = delete;
         Sound(Sound&&) = delete;
         Sound& operator=(Sound&&) = delete;
+
         void start() { if (!isInitialized) throw std::logic_error("Sound not initialized"); ma_sound_start(&sound); }
         void stop() { if (!isInitialized) throw std::logic_error("Sound not initialized"); ma_sound_stop(&sound); }
         bool isPlaying() const { return isInitialized && ma_sound_is_playing(&sound); }
@@ -56,8 +65,8 @@ namespace {
 }
 
 struct AudioPlayer::Impl {
-    AudioEngine engine;
-    std::unique_ptr<Sound> sound;
+    AudioEngine engine{};
+    std::optional<Sound> sound{};
     std::function<void(void)> callback = []{};
 
     enum class CmdType { Play, Pause, Resume, Next, Stop };
@@ -106,10 +115,10 @@ struct AudioPlayer::Impl {
             }
             if (cmd.type == CmdType::Stop) break;
             if (cmd.type == CmdType::Play) {
-                if (sound) { sound->stop(); sound.reset(); }
+                if (sound) { sound->stop(); }
                 callback = cmd.callback ? cmd.callback : []{};
-                sound = std::make_unique<Sound>(engine, cmd.path);
-                ma_sound_set_end_callback(&sound->get(), [](void* userData, ma_sound* /*s*/) {
+                sound.emplace(engine, cmd.path);
+                ma_sound_set_end_callback(sound->get(), [](void* userData, ma_sound* /*s*/) {
                     Impl* impl = static_cast<Impl*>(userData);
                     impl->nextRequested.store(true, std::memory_order_release);
                     impl->cv.notify_one();

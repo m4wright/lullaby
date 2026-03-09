@@ -1,6 +1,6 @@
 #include "MusicSerializer.h"
 
-#include "json.hpp"
+#include "third_party/json.hpp"
 
 void to_json(nlohmann::json& j, const Song& song) {
 	j["name"] = song.name;

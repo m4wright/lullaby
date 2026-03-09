@@ -5,4 +5,4 @@ out/
 build/
 release/
 db/
-winlibs/
+third_party/winlibs/

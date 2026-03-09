@@ -13,7 +13,7 @@
 #include <print>
 
 extern "C" {
-#include "miniaudio.c"
+#include "third_party/miniaudio.c"
 }
 
 namespace {

@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O1" CACHE STRING "C++ compiler flags for Release b
 add_executable (Lullabies "Lullabies.cpp" "AudioPlayer.cpp" "MusicController.cpp" "Song.h" "MusicRepository.cpp" "MusicService.cpp" "MusicSerializer.h" "MusicSerializer.cpp")
 
 if (WIN32)
-	add_library(sqlite3 winlibs/sqlite3.c)
+	add_library(sqlite3 third_party/winlibs/sqlite3.c)
 
 	target_include_directories(sqlite3 PUBLIC winlibs)
 

@@ -29,9 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = songs.findIndex(s => s.name === name && s.artist === artist);
             if (index !== -1) {
                 currentSongIndex = index;
-                updateSongListActiveState();
             }
         }
+
+        updateSongListActiveState();
     }
 
     // New function to manage active state in song list based on currentSongIndex

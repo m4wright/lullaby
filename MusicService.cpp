@@ -4,13 +4,16 @@
 #include <vector>
 
 struct MusicService::Helper {
-	static void playSong(MusicService& self, Song song) {
-		self.currentSong = std::move(song);
+	static void playSong(MusicService& self, const Song& song) {
+		self.setCurrentSong(song);
 
-		std::println("Playing {} by {}", self.currentSong->name, self.currentSong->artist);
+		std::println("Playing {} by {}", song.name, song.artist);
 
-		self.player.play_sound(self.currentSong->path, [&] {
-			std::println("{} by {} is done playing", self.currentSong->name, self.currentSong->artist);
+		self.player.play_sound(song.path, [&] {
+			{
+				std::shared_lock lock(self.mtx);
+				std::println("{} by {} is done playing", self.currentSong->name, self.currentSong->artist);
+			}
 
 			self.playNextSong();
 		});
@@ -20,15 +23,18 @@ struct MusicService::Helper {
 		if (songs.empty()) {
 			throw std::runtime_error("There are no songs to play");
 		}
-		if (!self.currentSong) {
+
+		const std::optional<Song>& currentSongOpt = self.getCurrentSong();
+
+		if (!currentSongOpt) {
 			return songs[0];
 		}
 
-		const Song& currentSongPlaying = self.currentSong.value();
+		const Song& currentSongPlaying = currentSongOpt.value();
 
 		auto it = std::find_if(songs.begin(), songs.end(), [&currentSongPlaying](const Song& song) {
 			return song.artist == currentSongPlaying.artist && song.name == currentSongPlaying.name;
-			});
+		});
 
 		if (it == songs.end()) {
 			return songs[0];

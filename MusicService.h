@@ -6,19 +6,25 @@
 
 #include <vector>
 #include <optional>
+#include <shared_mutex>
 
 
 
 
 class MusicService {
+	std::shared_mutex mtx;
 	AudioPlayer player{};
 	MusicRepository musicRepository;
 	std::optional<Song> currentSong{};
-	std::function<void(const Song&)> onSongStartCallback = [](const Song&) {};
 
 	struct Helper;
 
 	Song playNextSong(bool forward);
+
+	void setCurrentSong(Song song) {
+		std::lock_guard lock(mtx);
+		currentSong = std::move(song);
+	}
 	
 public:
 
@@ -59,11 +65,12 @@ public:
 		return musicRepository.fetchAllSongs();
 	}
 
-	const std::optional<Song>& getCurrentSong() const {
+	const std::optional<Song>& getCurrentSong() {
+		std::shared_lock lock(mtx);
 		return currentSong;
 	}
 
-	bool isPlaying() const {
+	bool isPlaying() {
 		return player.isPlaying();
 	}
 };

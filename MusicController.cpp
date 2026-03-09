@@ -5,8 +5,13 @@
 
 #include <string>
 #include <print>
+#include <mutex>
+#include <condition_variable>
 
-SongStatus determineStatus(const MusicService& musicService) {
+static std::mutex mtx;
+static std::condition_variable cv;
+
+SongStatus determineStatus(MusicService& musicService) {
 	const std::optional<Song>& currentSongOpt = musicService.getCurrentSong();
 	return currentSongOpt.has_value()
 		? SongStatus(currentSongOpt->name, currentSongOpt->artist, musicService.isPlaying())

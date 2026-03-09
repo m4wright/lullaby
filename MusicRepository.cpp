@@ -1,6 +1,6 @@
 #include "MusicRepository.h"
 
-#include "sqlite3.h"
+#include "third_party/sqlite3.h"
 
 #include <algorithm>
 #include <stdexcept>

@@ -1,7 +1,7 @@
 #include "MusicController.h"
 #include "MusicSerializer.h"
 
-#include "httplib.h"
+#include "third_party/httplib.h"
 
 #include <string>
 #include <print>

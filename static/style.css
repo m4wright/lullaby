@@ -121,7 +121,7 @@ html, body {
 
 .player-controls-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* center the controls horizontally */
     align-items: center;
 }
 
@@ -130,6 +130,7 @@ html, body {
     display: flex;
     gap: 12px;
     align-items: center;
+    justify-content: center; /* ensure buttons inside are centered */
 }
 
 /* =========================

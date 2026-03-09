@@ -11,7 +11,7 @@ int determine_port(int argc, char** argv) {
         return atoi(argv[1]);
     }
     else {
-        return 9095;
+        return 9096;
     }
 }
 

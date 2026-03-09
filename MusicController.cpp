@@ -6,6 +6,12 @@
 #include <string>
 #include <print>
 
+SongStatus determineStatus(const MusicService& musicService) {
+	const std::optional<Song>& currentSongOpt = musicService.getCurrentSong();
+	return currentSongOpt.has_value()
+		? SongStatus(currentSongOpt->name, currentSongOpt->artist, musicService.isPlaying())
+		: SongStatus();
+}
 
 void startServer(MusicService& musicService, int port, const std::string& mount_point) {
 	httplib::Server server;
@@ -13,8 +19,15 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 	server.set_mount_point("/", mount_point);
 
 	server.Get("/music", [&musicService](const httplib::Request&, httplib::Response& response) {
-		auto songs = musicService.getAllSongs();
-		response.set_content(to_string(songs), "application/json");
+		std::vector<Song> songs = musicService.getAllSongs();
+		SongStatus status = determineStatus(musicService);
+
+		response.set_content(to_string(songs, status), "application/json");
+	});
+
+	server.Get("/music/now-playing", [&musicService](const httplib::Request&, httplib::Response& response) {
+		SongStatus status = determineStatus(musicService);
+		response.set_content(to_string(status), "application/json");
 	});
 
 	server.Get("/music/media/play", [&musicService](const httplib::Request& request, httplib::Response& response) {
@@ -51,6 +64,7 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 		Song song = musicService.playPreviousSong();
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
 	});
+
 
 	std::println("Starting to listen on port {}", port);
 	server.listen("0.0.0.0", port);

@@ -104,6 +104,10 @@ struct AudioPlayer::Impl {
     void pause() { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Pause}); cv.notify_one(); }
     void resume() { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Resume}); cv.notify_one(); }
 
+    bool isPlaying() const {
+		return sound.has_value() && sound->isPlaying();
+    }
+
     void worker_loop() {
         for (;;) {
             Command cmd;
@@ -139,3 +143,4 @@ void AudioPlayer::play_sound(const std::string& path, std::function<void(void)> 
 std::string_view AudioPlayer::toggle() { return impl->toggle(); }
 void AudioPlayer::pause() { impl->pause(); }
 void AudioPlayer::resume() { impl->resume(); }
+bool AudioPlayer::isPlaying() const { return impl->isPlaying(); }

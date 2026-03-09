@@ -14,6 +14,7 @@ class MusicService {
 	AudioPlayer player{};
 	MusicRepository musicRepository;
 	std::optional<Song> currentSong{};
+	std::function<void(const Song&)> onSongStartCallback = [](const Song&) {};
 
 	struct Helper;
 
@@ -56,5 +57,13 @@ public:
 
 	std::vector<Song> getAllSongs() {
 		return musicRepository.fetchAllSongs();
+	}
+
+	const std::optional<Song>& getCurrentSong() const {
+		return currentSong;
+	}
+
+	bool isPlaying() const {
+		return player.isPlaying();
 	}
 };

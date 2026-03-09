@@ -5,24 +5,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('next-btn');
     const shuffleBtn = document.getElementById('shuffle-btn');
     const repeatBtn = document.getElementById('repeat-btn');
-    const currentSongEl = document.getElementById('current-song');
-    const currentTimeEl = document.getElementById('current-time');
-    const totalDurationEl = document.getElementById('total-duration');
 
     let songs = [];
     let currentSongIndex = -1;
+    let isPlaying = false;
     let isShuffle = false;
     let isRepeat = false;
 
     const hostPort = window.location.origin;
 
-    fetch(`${hostPort}/music`)
-        .then(response => response.json())
-        .then(data => {
-            songs = data;
-            renderSongList();
-        })
-        .catch(error => console.error('Error fetching songs:', error));
+    getMusicStatus();
+
+    setInterval(() => getStatus(), 1000);
+
+    function updateNowPlayingUI(name, artist, playing) {
+
+        isPlaying = playing;
+
+        console.log("Updating now playing UI: ", { name, artist, playing });
+
+        // Also update the active song in the list if name/artist are provided
+        if (name && artist) {
+            const index = songs.findIndex(s => s.name === name && s.artist === artist);
+            if (index !== -1) {
+                currentSongIndex = index;
+                updateSongListActiveState();
+            }
+        }
+    }
+
+    // New function to manage active state in song list based on currentSongIndex
+    function updateSongListActiveState() {
+
+        let currentSongClass = (isPlaying ? 'active' : 'paused');
+
+        document.querySelectorAll('.song-item').forEach((item, index) => {
+            item.classList.remove('active');
+            item.classList.remove('paused');
+
+            if (index === currentSongIndex) {
+                item.classList.add(currentSongClass);
+            }
+        });
+    }
+
+    function getStatus() {
+        fetch(`${hostPort}/music/now-playing`)
+            .then(response => response.json())
+            .then(status => {
+                updateNowPlayingUI(status.name, status.artist, status.playing);
+            })
+        .catch(error => console.error('Error fetching now playing status:', error));
+    }
+    function getMusicStatus() {
+        fetch(`${hostPort}/music`)
+            .then(response => response.json())
+            .then(status => {
+                songs = status['songs'];
+
+                var nowPlaying = status.now_playing;
+
+                updateNowPlayingUI(nowPlaying.name, nowPlaying.artist, nowPlaying.playing);
+
+                renderSongList();
+            })
+            .catch(error => console.error('Error fetching songs:', error));
+    }
+
 
     // Render song list
     function renderSongList() {
@@ -43,13 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             songList.appendChild(li);
         });
+        updateSongListActiveState();
     }
 
-    // Play a song
     function playSong(index) {
         if (index >= 0 && index < songs.length) {
-            currentSongIndex = index;
-            const song = songs[currentSongIndex];
+            const song = songs[index];
 
             fetch(`${hostPort}/music/media/play?name=${encodeURIComponent(song.name)}&artist=${encodeURIComponent(song.artist)}`)
                 .catch(error => console.error('Error playing song:', error));
@@ -66,61 +114,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Error playing next song:', error));
     }
 
-    // TODO: Eventually use websockets to get updates when the song changes?
-    function updateUI() {
-        const currentSong = songs[currentSongIndex];
-        if (currentSong) {
-            currentSongEl.textContent = `${currentSong.name} - ${currentSong.artist}`;
-        } else {
-            currentSongEl.textContent = 'No song selected';
-        }
 
-        document.querySelectorAll('.song-item').forEach((item, index) => {
-            if (index === currentSongIndex) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
-    }
-
-    // Play/pause button
     playPauseBtn.addEventListener('click', () => {
         fetch(`${hostPort}/music/media/toggle_pause`)
             .catch(error => console.error('Error toggling between play and pause:', error));
     });
 
-    // Previous button
     prevBtn.addEventListener('click', () => {
         playPreviousSong();
         prevBtn.classList.add('clicked');
         setTimeout(() => prevBtn.classList.remove('clicked'), 200);
     });
 
-    // Next button
     nextBtn.addEventListener('click', () => {
         playNextSong();
         nextBtn.classList.add('clicked');
         setTimeout(() => nextBtn.classList.remove('clicked'), 200);
     });
 
-    // Shuffle button
     shuffleBtn.addEventListener('click', () => {
         isShuffle = !isShuffle;
         shuffleBtn.classList.toggle('active', isShuffle);
     });
-
-    function formatTime(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-    }
-
-    function getRandomIndex() {
-        let index = Math.floor(Math.random() * songs.length);
-        while (index === currentSongIndex) {
-            index = Math.floor(Math.random() * songs.length);
-        }
-        return index;
-    }
 });

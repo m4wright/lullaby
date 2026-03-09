@@ -32,4 +32,6 @@ public:
 
     void pause();
     void resume();
+
+	bool isPlaying() const;
 };

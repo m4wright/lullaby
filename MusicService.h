@@ -3,11 +3,11 @@
 #include "AudioPlayer.h"
 #include "MusicRepository.h"
 #include "Song.h"
+#include "SongStatus.h"
 
 #include <vector>
 #include <optional>
 #include <shared_mutex>
-
 
 
 
@@ -65,12 +65,14 @@ public:
 		return musicRepository.fetchAllSongs();
 	}
 
-	const std::optional<Song>& getCurrentSong() {
-		std::shared_lock lock(mtx);
-		return currentSong;
-	}
-
 	bool isPlaying() {
 		return player.isPlaying();
+	}
+
+	SongStatus getCurrentStatus() {
+		std::shared_lock lock(mtx);
+		return currentSong.has_value()
+			? SongStatus(currentSong->name, currentSong->artist, isPlaying())
+			: SongStatus();
 	}
 };

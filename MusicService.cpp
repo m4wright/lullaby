@@ -24,13 +24,13 @@ struct MusicService::Helper {
 			throw std::runtime_error("There are no songs to play");
 		}
 
-		const std::optional<Song>& currentSongOpt = self.getCurrentSong();
+		std::shared_lock lock(self.mtx);
 
-		if (!currentSongOpt) {
+		if (!self.currentSong) {
 			return songs[0];
 		}
 
-		const Song& currentSongPlaying = currentSongOpt.value();
+		const Song& currentSongPlaying = self.currentSong.value();
 
 		auto it = std::find_if(songs.begin(), songs.end(), [&currentSongPlaying](const Song& song) {
 			return song.artist == currentSongPlaying.artist && song.name == currentSongPlaying.name;

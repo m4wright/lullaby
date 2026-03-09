@@ -1,4 +1,5 @@
 #include "MusicSerializer.h"
+#include "SongStatus.h"
 
 #include "third_party/json.hpp"
 

@@ -11,12 +11,7 @@
 static std::mutex mtx;
 static std::condition_variable cv;
 
-SongStatus determineStatus(MusicService& musicService) {
-	const std::optional<Song>& currentSongOpt = musicService.getCurrentSong();
-	return currentSongOpt.has_value()
-		? SongStatus(currentSongOpt->name, currentSongOpt->artist, musicService.isPlaying())
-		: SongStatus();
-}
+
 
 void startServer(MusicService& musicService, int port, const std::string& mount_point) {
 	httplib::Server server;
@@ -25,15 +20,25 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 
 	server.Get("/music", [&musicService](const httplib::Request&, httplib::Response& response) {
 		std::vector<Song> songs = musicService.getAllSongs();
-		SongStatus status = determineStatus(musicService);
+		SongStatus status = musicService.getCurrentStatus();
 
 		response.set_content(to_string(songs, status), "application/json");
 	});
 
 	server.Get("/music/now-playing", [&musicService](const httplib::Request&, httplib::Response& response) {
-		SongStatus status = determineStatus(musicService);
+		SongStatus status = musicService.getCurrentStatus();
 		response.set_content(to_string(status), "application/json");
 	});
+
+	//server.Get("/music/subscribe/now-playing", [&musicService](const httplib::Request&, httplib::Response& response) {
+	//	response.set_header("Content-Type", "text/event-stream");
+	//	response.set_header("Cache-Control", "no-cache");
+	//	response.set_header("Connection", "keep-alive");
+
+	//	response.set_chunked_content_provider("text/event-stream", [&musicService](size_t offset, httplib::DataSink& sink) {
+
+	//		});
+	//});
 
 	server.Get("/music/media/play", [&musicService](const httplib::Request& request, httplib::Response& response) {
 		if (!(request.has_param("name") && request.has_param("artist"))) {

@@ -3,20 +3,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const playPauseBtn = document.getElementById('play-pause-btn');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
-    const shuffleBtn = document.getElementById('shuffle-btn');
-    const repeatBtn = document.getElementById('repeat-btn');
 
     let songs = [];
     let currentSongIndex = -1;
     let isPlaying = false;
-    let isShuffle = false;
-    let isRepeat = false;
 
     const hostPort = window.location.origin;
 
     getMusicStatus();
 
-    setInterval(() => getStatus(), 1000);
+    const eventSource = new EventSource(`${hostPort}/music/subscribe/now-playing`);
+
+    initEventSource();
 
     function updateNowPlayingUI(name, artist, playing) {
 
@@ -35,6 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSongListActiveState();
     }
 
+    function initEventSource() {
+        eventSource.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            updateNowPlayingUI(message.name, message.artist, message.playing);
+        };
+    }
+
     // New function to manage active state in song list based on currentSongIndex
     function updateSongListActiveState() {
 
@@ -48,15 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.add(currentSongClass);
             }
         });
-    }
-
-    function getStatus() {
-        fetch(`${hostPort}/music/now-playing`)
-            .then(response => response.json())
-            .then(status => {
-                updateNowPlayingUI(status.name, status.artist, status.playing);
-            })
-        .catch(error => console.error('Error fetching now playing status:', error));
     }
     function getMusicStatus() {
         fetch(`${hostPort}/music`)
@@ -131,10 +127,5 @@ document.addEventListener('DOMContentLoaded', () => {
         playNextSong();
         nextBtn.classList.add('clicked');
         setTimeout(() => nextBtn.classList.remove('clicked'), 200);
-    });
-
-    shuffleBtn.addEventListener('click', () => {
-        isShuffle = !isShuffle;
-        shuffleBtn.classList.toggle('active', isShuffle);
     });
 });

@@ -132,12 +132,6 @@ html, body {
     align-items: center;
 }
 
-/* Shuffle & repeat */
-.playback-options {
-    display: flex;
-    gap: 10px;
-}
-
 /* =========================
    BUTTON STYLES
    ========================= */

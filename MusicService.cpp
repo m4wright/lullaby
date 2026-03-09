@@ -5,10 +5,11 @@
 
 struct MusicService::Helper {
 	static void playSong(MusicService& self, const Song& song) {
-		self.setCurrentSong(song);
+		std::lock_guard lock(self.mtx);
+		self.currentSong = song;
 
 		std::println("Playing {} by {}", song.name, song.artist);
-
+		
 		self.player.play_sound(song.path, [&] {
 			{
 				std::shared_lock lock(self.mtx);
@@ -17,6 +18,8 @@ struct MusicService::Helper {
 
 			self.playNextSong();
 		});
+
+		self.onSongStatusChange(SongStatus{song.name, song.artist, true});
 	}
 
 	static const Song& songToPlay(MusicService& self, const std::vector<Song>& songs, bool forward) {

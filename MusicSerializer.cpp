@@ -19,6 +19,7 @@ void to_json(nlohmann::json& j, const SongStatus& songStatus) {
 		j["artist"] = songStatus.artist;
 	}
 
+	j["event"] = "message";
 	j["playing"] = songStatus.playing;
 }
 

@@ -1,7 +1,7 @@
 cd release
 cmake -DCMAKE_BUILD_TYPE=Release ..
 
-# This will take ~6-7 minutes. It builds with O1
+# This will take ~10 minutes. It builds with O2
 time make
 
 # Restart the app

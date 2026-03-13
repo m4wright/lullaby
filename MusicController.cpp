@@ -112,6 +112,14 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
 	});
 
+	server.Get("/exit", [&server](const httplib::Request&, httplib::Response& response) {
+		response.set_content("Shutting down server", "text/plain");
+		std::thread([&server]{
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			std::abort();
+		}).detach();
+	});
+
 
 	std::println("Starting to listen on port {}", port);
 	server.listen("0.0.0.0", port);

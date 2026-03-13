@@ -3,6 +3,7 @@ out/
 .vs/
 .github/
 build/
+debug/
 release/
 db/
 third_party/winlibs/

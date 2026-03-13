@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <print>
+#include <mutex>
 
 MusicRepository::~MusicRepository() = default;
 
@@ -14,6 +15,8 @@ MusicRepository& MusicRepository::operator=(MusicRepository&&) noexcept = defaul
 
 struct MusicRepository::Impl {
 	std::unique_ptr<sqlite3, decltype(&sqlite3_close)> db{ nullptr, sqlite3_close };
+	std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)> stmt{ nullptr, sqlite3_finalize };
+	std::mutex mtx;
 
 	Impl(const std::string& dbPath) {
 		sqlite3* rawDb = nullptr;
@@ -22,17 +25,38 @@ struct MusicRepository::Impl {
 		}
 
 		db.reset(rawDb);
+
+		sqlite3_stmt* rawStmt = nullptr;
+		const char* query = "SELECT name, artist, path FROM songs WHERE name = ? AND artist = ?;";
+		if (sqlite3_prepare_v3(db.get(), query, -1, SQLITE_PREPARE_PERSISTENT, &rawStmt, nullptr) != SQLITE_OK) {
+			throw std::runtime_error("Failed to prepare statement");
+		}
+		stmt.reset(rawStmt);
 	}
 
-	// TODO: Query for the song directly instead of fetching all songs and filtering in memory
 	std::optional<Song> fetchSong(const std::string& name, const std::string& artist) {
-		for (const Song& song : fetchAllSongs()) {
-			if (song.name == name && song.artist == artist) {
-				return song;
-			}
+		// Prevent multiple threads from using the same prepared statement simultaneously
+		std::lock_guard lock(mtx);
+
+		sqlite3_reset(stmt.get());
+
+		sqlite3_bind_text(stmt.get(), 1, name.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(stmt.get(), 2, artist.c_str(), -1, SQLITE_TRANSIENT);
+
+		std::optional<Song> result;
+
+		int rc = sqlite3_step(stmt.get());
+		if (rc != SQLITE_ROW) {
+			return result;
 		}
 
-		return std::nullopt;
+		const char* path = reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 2));
+
+		if (path) {
+			result.emplace(Song{ name, artist, std::string(path) });
+		}
+
+		return result;
 	}
 
 	std::vector<Song> fetchAllSongs() {

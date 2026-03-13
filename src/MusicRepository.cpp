@@ -24,6 +24,17 @@ struct MusicRepository::Impl {
 		db.reset(rawDb);
 	}
 
+	// TODO: Query for the song directly instead of fetching all songs and filtering in memory
+	std::optional<Song> fetchSong(const std::string& name, const std::string& artist) {
+		for (const Song& song : fetchAllSongs()) {
+			if (song.name == name && song.artist == artist) {
+				return song;
+			}
+		}
+
+		return std::nullopt;
+	}
+
 	std::vector<Song> fetchAllSongs() {
 		char* errorMessage = nullptr;
 		std::vector<Song> result{};
@@ -50,4 +61,8 @@ MusicRepository::MusicRepository(const std::string& dbPath) : impl(std::make_uni
 
 std::vector<Song> MusicRepository::fetchAllSongs() {
 	return impl->fetchAllSongs();
+}
+
+std::optional<Song> MusicRepository::fetchSong(const std::string& name, const std::string& artist) {
+	return impl->fetchSong(name, artist);
 }

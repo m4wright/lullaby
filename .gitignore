@@ -6,4 +6,4 @@ build/
 debug/
 release/
 db/
-third_party/winlibs/
+src/third_party/winlibs/

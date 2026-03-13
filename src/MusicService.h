@@ -83,7 +83,7 @@ public:
 		return isPlaying;
 	}
 
-	bool play(std::string_view name, std::string_view artist);
+	bool play(const std::string& name, const std::string& artist);
 
 	MusicRepository& getMusicRepository() {
 		return musicRepository;

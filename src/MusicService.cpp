@@ -64,14 +64,11 @@ Song MusicService::playNextSong(bool forward) {
 	return returnSong;
 }
 
-bool MusicService::play(std::string_view name, std::string_view artist) {
-	auto songs = musicRepository.fetchAllSongs();
-	auto it = std::find_if(songs.begin(), songs.end(), [&name, &artist](const Song& song) {
-		return song.artist == artist && song.name == name;
-	});
+bool MusicService::play(const std::string& name, const std::string& artist) {
+	std::optional<Song> song = musicRepository.fetchSong(name, artist);
 
-	if (it != songs.end()) {
-		Helper::playSong(*this, *it);
+	if (song) {
+		Helper::playSong(*this, song.value());
 		return true;
 	}
 	else {

@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <optional>
 
 
 class MusicRepository {
@@ -22,4 +23,5 @@ public:
 	MusicRepository& operator=(MusicRepository&&) noexcept;
 
 	std::vector<Song> fetchAllSongs();
+	std::optional<Song> fetchSong(const std::string & name, const std::string & artist);
 };

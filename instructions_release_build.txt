@@ -1,8 +1,0 @@
-cd release
-cmake -DCMAKE_BUILD_TYPE=Release ..
-
-# This will take ~10 minutes. It builds with O2
-time make
-
-# Restart the app
-systemctl --user restart music.service

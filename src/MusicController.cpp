@@ -15,22 +15,32 @@ class MusicStatusUpdater {
 
 	std::string currentStatusStr = "data: " + to_string(SongStatus{}) + "\n\n";
 
+	bool update(httplib::DataSink& sink, const std::string& status) {
+		if (!sink.is_writable()) {
+			return false;
+		}
+		return sink.write(status.data(), status.size());
+	}
+
 public:
+	// Immediately send the current status.
+	// Then wait until there is an update. Once there is an update, return true to indicate
+	// to send the status again
 	bool waitForUpdate(httplib::DataSink& sink) {
 		std::string status;
 
 		{
 			std::shared_lock lock(mtx);
-			cv.wait(lock);
 			status = currentStatusStr;
 		}
 
-
-		if (!sink.is_writable()) {
+		if (!update(sink, status)) {
 			return false;
 		}
-		if (!sink.write(status.data(), status.size())) {
-			return false;
+
+		{
+			std::shared_lock lock(mtx);
+			cv.wait(lock);
 		}
 
 		return true;

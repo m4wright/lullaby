@@ -8,19 +8,20 @@
 #include <vector>
 #include <optional>
 #include <shared_mutex>
+#include <memory>
 
 
 
 class MusicService {
 	std::shared_mutex mtx;
-	AudioPlayer player{};
+    std::unique_ptr<AudioPlayer> player;
 	MusicRepository musicRepository;
 	std::optional<Song> currentSong{};
 	std::function<void(const SongStatus&)> onSongStatusChange{};
 
 	struct Helper;
 
-	Song playNextSong(bool forward);
+    Song playNextSong(bool forward); // Updated function signature for clarity
 
 	void setCurrentSong(Song song) {
 		std::lock_guard lock(mtx);
@@ -35,7 +36,8 @@ class MusicService {
 	}
 	
 public:
-	MusicService(MusicRepository&& repository) : musicRepository(std::move(repository)) {}
+    MusicService(MusicRepository&& repository, std::unique_ptr<AudioPlayer> player = AudioPlayer::create_default())
+		: musicRepository(std::move(repository)), player(std::move(player)) {}
 
 	void setOnSongStatusChange(std::function<void(const SongStatus&)> callback) {
 		std::lock_guard lock(mtx);
@@ -56,21 +58,21 @@ public:
 	}
 
 	void pause() {
-		player.pause();
+        player->pause();
 
 		std::shared_lock lock(mtx);
 		onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, false });
 	}
 
 	void resume() {
-		player.resume();
+        player->resume();
 
 		std::shared_lock lock(mtx);
 		onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, true });
 	}
 
 	bool toggle() {
-		bool isPlaying = player.toggle();
+        bool isPlaying = player->toggle();
 
 		std::shared_lock lock(mtx);
 		if (currentSong) {
@@ -94,7 +96,7 @@ public:
 	}
 
 	bool isPlaying() {
-		return player.isPlaying();
+        return player->isPlaying();
 	}
 
 	SongStatus getCurrentStatus() {

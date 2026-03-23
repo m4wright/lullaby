@@ -64,7 +64,10 @@ namespace {
     };
 }
 
-struct AudioPlayer::Impl {
+// Keep the production implementation local. Implement a concrete class
+// `ProdAudioPlayer` that satisfies the `AudioPlayer` interface.
+
+struct ProdAudioPlayerImpl {
     AudioEngine engine{};
     std::optional<Sound> sound{};
     std::function<void(void)> callback = []{};
@@ -78,8 +81,8 @@ struct AudioPlayer::Impl {
     std::queue<Command> queue;
     std::atomic<bool> nextRequested{false};
 
-    Impl() { worker = std::thread([this]{ worker_loop(); }); }
-    ~Impl() {
+    ProdAudioPlayerImpl() { worker = std::thread([this]{ worker_loop(); }); }
+    ~ProdAudioPlayerImpl() {
         { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Stop}); }
         cv.notify_one();
         if (worker.joinable()) worker.join();
@@ -126,7 +129,7 @@ struct AudioPlayer::Impl {
                 callback = cmd.callback ? cmd.callback : []{};
                 sound.emplace(engine, cmd.path);
                 ma_sound_set_end_callback(sound->get(), [](void* userData, ma_sound* /*s*/) {
-                    Impl* impl = static_cast<Impl*>(userData);
+                    ProdAudioPlayerImpl* impl = static_cast<ProdAudioPlayerImpl*>(userData);
                     impl->nextRequested.store(true, std::memory_order_release);
                     impl->cv.notify_one();
                 }, this);
@@ -140,10 +143,21 @@ struct AudioPlayer::Impl {
     }
 };
 
-AudioPlayer::AudioPlayer() : impl(std::make_unique<Impl>()) {}
-AudioPlayer::~AudioPlayer() = default;
-void AudioPlayer::play_sound(const std::string& path, std::function<void(void)> fn) { impl->play_sound(path, std::move(fn)); }
-bool AudioPlayer::toggle() { return impl->toggle(); }
-void AudioPlayer::pause() { impl->pause(); }
-void AudioPlayer::resume() { impl->resume(); }
-bool AudioPlayer::isPlaying() { return impl->isPlaying(); }
+class ProdAudioPlayer : public AudioPlayer {
+public:
+    ProdAudioPlayer() : impl(std::make_unique<ProdAudioPlayerImpl>()) {}
+    ~ProdAudioPlayer() override = default;
+
+    void play_sound(const std::string& path, std::function<void(void)> fn) override { impl->play_sound(path, std::move(fn)); }
+    bool toggle() override { return impl->toggle(); }
+    void pause() override { impl->pause(); }
+    void resume() override { impl->resume(); }
+    bool isPlaying() override { return impl->isPlaying(); }
+
+private:
+    std::unique_ptr<ProdAudioPlayerImpl> impl;
+};
+
+std::unique_ptr<AudioPlayer> AudioPlayer::create_default() {
+    return std::make_unique<ProdAudioPlayer>();
+}

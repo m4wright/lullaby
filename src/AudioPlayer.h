@@ -1,7 +1,6 @@
-﻿// Lightweight declaration for AudioPlayer using PIMPL to hide heavy
-// miniaudio implementation details from consumers. This reduces rebuild
-// scopes when miniaudio changes and avoids including miniaudio headers in
-// every translation unit that includes this header.
+﻿// AudioPlayer interface. Production implementation lives in AudioPlayer.cpp
+// and can be created with AudioPlayer::create_default(). Tests can provide
+// a custom subclass to simulate playback without using miniaudio.
 
 #pragma once
 
@@ -10,25 +9,18 @@
 #include <memory>
 
 class AudioPlayer {
-    struct Impl;
-    std::unique_ptr<Impl> impl;
-
 public:
-    AudioPlayer();
-    ~AudioPlayer();
+    virtual ~AudioPlayer() = default;
 
-    AudioPlayer(const AudioPlayer&) = delete;
-    AudioPlayer& operator=(const AudioPlayer&) = delete;
+    // Enqueue a request to play the given path. The provided callback will
+    // be invoked when the sound ends.
+    virtual void play_sound(const std::string& path, std::function<void(void)> fn) = 0;
 
-    // Enqueue a request to play the given path. The worker thread will own
-    // the sound instance and will invoke the provided callback when the
-    // sound ends (the callback is invoked on the worker thread).
-    void play_sound(const std::string& path, std::function<void(void)> fn);
+    virtual bool toggle() = 0;
+    virtual void pause() = 0;
+    virtual void resume() = 0;
+    virtual bool isPlaying() = 0;
 
-    bool toggle();
-
-    void pause();
-    void resume();
-
-	bool isPlaying();
+    // Factory for production implementation.
+    static std::unique_ptr<AudioPlayer> create_default();
 };

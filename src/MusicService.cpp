@@ -10,7 +10,7 @@ struct MusicService::Helper {
 
 		std::println("Playing {} by {}", song.name, song.artist);
 		
-		self.player.play_sound(song.path, [&] {
+        self.player->play_sound(song.path, [&] {
 			{
 				std::shared_lock lock(self.mtx);
 				std::println("{} by {} is done playing", self.currentSong->name, self.currentSong->artist);

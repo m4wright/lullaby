@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for Lullabies, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.10)
 
 set(CMAKE_CXX_STANDARD 23)
 
@@ -18,11 +18,8 @@ set(LULLABY_SOURCES
 add_library(lullaby_core STATIC ${LULLABY_SOURCES})
 target_include_directories(lullaby_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-add_library(audio_impl STATIC src/AudioPlayer.cpp)
-target_include_directories(audio_impl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-add_executable(Lullabies "src/Lullabies.cpp")
-target_link_libraries(Lullabies PRIVATE lullaby_core audio_impl)
+add_executable(Lullabies "src/Lullabies.cpp" "src/AudioPlayer.cpp")
+target_link_libraries(Lullabies PRIVATE lullaby_core)
 
 if (WIN32)
 	add_library(sqlite3 src/third_party/winlibs/sqlite3.c)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 project(lullaby_tests CXX)
 
@@ -19,13 +19,13 @@ if(BUILD_GTEST)
   FetchContent_MakeAvailable(googletest)
 endif()
 
-find_package(Threads REQUIRED)
-
 enable_testing()
 
-add_executable(lullaby_tests lullaby_tests.cpp)
+add_executable(lullaby_tests ../src/AudioPlayer.cpp "SerializerTests.cpp")
 target_include_directories(lullaby_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/..)
-target_link_libraries(lullaby_tests PRIVATE gtest_main lullaby_core Threads::Threads)
+
+target_link_libraries(lullaby_tests PRIVATE gtest_main lullaby_core)
+target_compile_definitions(lullaby_tests PRIVATE UNIT_TEST)
 
 include(GoogleTest)
 gtest_discover_tests(lullaby_tests)

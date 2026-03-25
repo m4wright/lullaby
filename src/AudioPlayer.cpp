@@ -12,9 +12,13 @@
 #include <optional>
 #include <print>
 
+#ifdef UNIT_TEST
+#include "tests/miniaudio_mocks.h"
+#else
 extern "C" {
 #include "third_party/miniaudio.c"
 }
+#endif
 
 namespace {
     class AudioEngine {

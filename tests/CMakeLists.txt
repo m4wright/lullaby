@@ -21,7 +21,7 @@ endif()
 
 enable_testing()
 
-add_executable(lullaby_tests ../src/AudioPlayer.cpp "SerializerTests.cpp")
+add_executable(lullaby_tests ../src/AudioPlayer.cpp "SerializerTests.cpp" "RepositoryTests.cpp")
 target_include_directories(lullaby_tests PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_link_libraries(lullaby_tests PRIVATE gtest_main lullaby_core)

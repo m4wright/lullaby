@@ -32,7 +32,7 @@ bool ma_sound_is_playing(const ma_sound* sound) {
 
 typedef void (*ma_sound_end_proc)(void* pUserData, ma_sound* pSound);
 ma_result ma_sound_set_end_callback(ma_sound* sound, ma_sound_end_proc callback, void* userData) {
-	std::thread([&] {
+	std::thread([=] {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		callback(userData, sound);
 	}).detach();

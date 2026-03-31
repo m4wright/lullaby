@@ -8,7 +8,7 @@
 #include <condition_variable>
 
 template <class T>
-concept WritableSink = requires(T sink, const std::string & data) {
+concept WritableSink = requires(T sink, const std::string& data) {
 	{ sink.is_writable() } -> std::same_as<bool>;
 	{ sink.write(data.data(), data.size()) } -> std::same_as<bool>;
 };
@@ -32,22 +32,13 @@ public:
 	// Then wait until there is an update. Once there is an update, return true to indicate
 	// to send the status again
 	bool waitForUpdate(WritableSink auto& sink) {
-		std::string status;
-
-		{
-			std::shared_lock lock(mtx);
-			status = currentStatusStr;
-		}
-
-		if (!update(sink, status)) {
+		std::shared_lock lock(mtx);
+		
+		if (!update(sink, currentStatusStr)) {
 			return false;
 		}
 
-		{
-			std::shared_lock lock(mtx);
-			cv.wait(lock);
-		}
-
+		cv.wait(lock);
 		return true;
 	}
 

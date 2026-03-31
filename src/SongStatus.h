@@ -11,7 +11,7 @@ struct SongStatus {
 		: name(std::move(name)), artist(std::move(artist)), playing(playing) {
 	}
 
-	SongStatus() : name(""), artist(""), playing(false) {}
+	SongStatus() : playing(false) {}
 
 	auto operator<=>(const SongStatus&) const = default;
 };

@@ -89,8 +89,8 @@ struct AudioPlayer::Impl {
         if (worker.joinable()) worker.join();
     }
 
-    void play_sound(const std::string& path, std::function<void(void)> fn) {
-        { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Play, path, std::move(fn)}); }
+    void playSound(std::string path, std::function<void(void)> fn) {
+        { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Play, std::move(path), std::move(fn)}); }
         cv.notify_one();
     }
 
@@ -146,7 +146,7 @@ struct AudioPlayer::Impl {
 
 AudioPlayer::AudioPlayer() : impl(std::make_unique<Impl>()) {}
 AudioPlayer::~AudioPlayer() = default;
-void AudioPlayer::play_sound(const std::string& path, std::function<void(void)> fn) { impl->play_sound(path, std::move(fn)); }
+void AudioPlayer::playSound(std::string path, std::function<void(void)> fn) { impl->playSound(std::move(path), std::move(fn)); }
 bool AudioPlayer::toggle() { return impl->toggle(); }
 void AudioPlayer::pause() { impl->pause(); }
 void AudioPlayer::resume() { impl->resume(); }

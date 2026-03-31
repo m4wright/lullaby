@@ -88,7 +88,7 @@ Browser->>MusicController: GET /music/media/play?name=SongName&artist=Artist
 MusicController->>MusicService: play(name, artist)
 MusicService->>MusicRepository: fetchSong(name, artist)
 MusicRepository-->>MusicService: Song
-MusicService->>AudioPlayer: play_sound(song.path)
+MusicService->>AudioPlayer: playSound(song.path)
 AudioPlayer->>miniaudio: start playback
 MusicService-->>MusicController: Playing song by artist
 MusicController-->>Browser: SSE event (song playing)

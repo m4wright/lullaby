@@ -8,6 +8,7 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <future>
 
 class AudioPlayer {
     struct Impl;
@@ -23,12 +24,12 @@ public:
     // Enqueue a request to play the given path. The worker thread will own
     // the sound instance and will invoke the provided callback when the
     // sound ends (the callback is invoked on the worker thread).
-    void playSound(std::string path, std::function<void(void)> fn);
+    std::future<void> playSound(std::string path, std::function<void(void)> fn);
 
-    bool toggle();
+    std::future<bool> toggle();
 
-    void pause();
-    void resume();
+    std::future<void> pause();
+    std::future<void> resume();
 
-	bool isPlaying();
+    bool isPlaying();
 };

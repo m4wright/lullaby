@@ -75,7 +75,7 @@ public:
 	}
 
 	bool toggle() {
-		bool isPlaying = player.toggle();
+		bool isPlaying = player.toggle().get();
 
 		std::shared_lock lock(mtx);
 		if (currentSong) {

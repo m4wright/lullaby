@@ -13,8 +13,7 @@ struct PlayWithWait {
 	PlayWithWait(AudioPlayer& player, const std::string& path = "/tmp/a.mp3") {
 		player.playSound(path, [&] {
 			callbackCalledPromise.set_value(true);
-		});
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}).get();
 	}
 
 	bool wait() {
@@ -41,12 +40,10 @@ TEST(AudioPlayer, PlayPauseSongComplete) {
 	PlayWithWait waiter{ player };
 	EXPECT_TRUE(player.isPlaying());
 
-	player.pause(); 
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	player.pause().get();
 	EXPECT_FALSE(player.isPlaying());
 
-	player.resume();
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	player.resume().get();
 	EXPECT_TRUE(player.isPlaying());
 
 	bool soundCompleted = waiter.wait();
@@ -59,11 +56,9 @@ TEST(AudioPlayer, Toggle) {
 	PlayWithWait waiter{ player };
 	EXPECT_TRUE(player.isPlaying());
 
-	player.toggle();
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	player.toggle().get();
 	EXPECT_FALSE(player.isPlaying());
 
-	player.toggle();
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	player.toggle().get();
 	EXPECT_TRUE(player.isPlaying());
 }

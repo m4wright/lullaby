@@ -1,16 +1,13 @@
 #include "AudioPlayer.h"
+#include "SingleThreadExecutor.h"
 
 #include <string>
 #include <functional>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <queue>
 #include <utility>
-#include <atomic>
 #include <memory>
 #include <optional>
 #include <print>
+
 
 #ifdef UNIT_TEST
 #include "tests/miniaudio_mocks.h"
@@ -71,83 +68,67 @@ namespace {
 struct AudioPlayer::Impl {
     AudioEngine engine{};
     std::optional<Sound> sound{};
-    std::function<void(void)> callback = []{};
+    SingleThreadExecutor executor{};
+    std::function<void()> callback = [] {};
 
-    enum class CmdType { Play, Pause, Resume, Next, Stop };
-    struct Command { CmdType type = CmdType::Stop; std::string path; std::function<void()> callback; Command() = default; Command(CmdType t, std::string p = {}, std::function<void()> cb = {}) : type(t), path(std::move(p)), callback(std::move(cb)) {} };
+    std::future<void> playSound(std::string path, std::function<void(void)> cb) {
+        return executor.submit([this, path = std::move(path), cb = std::move(cb)] {
+            sound.emplace(engine, std::move(path));
+            ma_sound_set_end_callback(sound->get(), [](void* userData, ma_sound*) {
+                auto* impl = static_cast<Impl*>(userData);
+                impl->executor.submit([impl] {           // end callback posts back onto executor
+                    impl->callback();
+                });
+            }, this);
 
-    std::thread worker;
-    std::mutex mtx;
-    std::condition_variable cv;
-    std::queue<Command> queue;
-    std::atomic<bool> nextRequested{false};
-
-    Impl() { worker = std::thread([this]{ worker_loop(); }); }
-    ~Impl() {
-        { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Stop}); }
-        cv.notify_one();
-        if (worker.joinable()) worker.join();
+            callback = cb;
+            sound->start();
+        });
     }
 
-    void playSound(std::string path, std::function<void(void)> fn) {
-        { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Play, std::move(path), std::move(fn)}); }
-        cv.notify_one();
+    std::future<bool> toggle() {
+        return executor.submit([this] {
+            if (!sound) return false;
+            if (sound->isPlaying()) { sound->stop(); return false; }
+            else { sound->start(); return true; }
+         });
     }
 
-    bool toggle() {
-        bool isPlaying;
-
-        std::lock_guard lock(mtx);
-        if (sound) {
-            if (sound->isPlaying()) { isPlaying = false; queue.emplace(Command{CmdType::Pause}); }
-            else { isPlaying = true; queue.emplace(Command{CmdType::Resume}); }
-        }
-        else { isPlaying = false; }
-        cv.notify_one();
-        return isPlaying;
-    }
-
-    void pause() { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Pause}); cv.notify_one(); }
-    void resume() { std::lock_guard lock(mtx); queue.emplace(Command{CmdType::Resume}); cv.notify_one(); }
-
-    bool isPlaying() {
-        std::lock_guard lock(mtx);
-		return sound.has_value() && sound->isPlaying();
-    }
-
-    void worker_loop() {
-        for (;;) {
-            Command cmd;
-            {
-                std::unique_lock lock(mtx);
-                cv.wait(lock, [this]{ return !queue.empty() || nextRequested.load(std::memory_order_acquire); });
-                if (nextRequested.exchange(false, std::memory_order_acq_rel)) { cmd = Command{CmdType::Next}; }
-                else { cmd = std::move(queue.front()); queue.pop(); }
+    std::future<void> pause() { 
+        return executor.submit([this] {
+            if (sound) {
+                sound->stop();
             }
-            if (cmd.type == CmdType::Stop) break;
-            if (cmd.type == CmdType::Play) {
-                if (sound) { sound->stop(); }
-                callback = cmd.callback ? cmd.callback : []{};
-                sound.emplace(engine, cmd.path);
-                ma_sound_set_end_callback(sound->get(), [](void* userData, ma_sound* /*s*/) {
-                    Impl* impl = static_cast<Impl*>(userData);
-                    impl->nextRequested.store(true, std::memory_order_release);
-                    impl->cv.notify_one();
-                }, this);
+        });
+    }
+    std::future<void> resume() { 
+        return executor.submit([this] {
+            if (sound) {
                 sound->start();
             }
-            else if (cmd.type == CmdType::Next) { try { callback(); } catch (...) { } }
-            else if (cmd.type == CmdType::Pause) { if (sound) sound->stop(); }
-            else if (cmd.type == CmdType::Resume) { if (sound) sound->start(); }
-        }
-        if (sound) { sound->stop(); sound.reset(); }
+        });
     }
+
+    bool isPlaying() {
+        auto future = executor.submit([this] {
+            return sound && sound->isPlaying();
+        });
+
+        auto status = future.wait_for(std::chrono::seconds(5));
+
+        if (status == std::future_status::ready) {
+            return future.get();
+        }
+        throw std::runtime_error("Unable to check if a song is playing, the task didn't complete in time");
+    }
+
+    
 };
 
 AudioPlayer::AudioPlayer() : impl(std::make_unique<Impl>()) {}
 AudioPlayer::~AudioPlayer() = default;
-void AudioPlayer::playSound(std::string path, std::function<void(void)> fn) { impl->playSound(std::move(path), std::move(fn)); }
-bool AudioPlayer::toggle() { return impl->toggle(); }
-void AudioPlayer::pause() { impl->pause(); }
-void AudioPlayer::resume() { impl->resume(); }
+std::future<void> AudioPlayer::playSound(std::string path, std::function<void(void)> fn) { return impl->playSound(std::move(path), std::move(fn)); }
+std::future<bool> AudioPlayer::toggle() { return impl->toggle(); }
+std::future<void> AudioPlayer::pause() { return impl->pause(); }
+std::future<void> AudioPlayer::resume() { return impl->resume(); }
 bool AudioPlayer::isPlaying() { return impl->isPlaying(); }

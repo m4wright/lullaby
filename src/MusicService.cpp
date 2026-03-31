@@ -7,8 +7,6 @@ struct MusicService::Helper {
 	static void playSong(MusicService& self, const Song& song) {
 		std::function<void(const SongStatus&)> callback;
 
-		
-
 		{
 			std::lock_guard lock(self.mtx);
 			self.currentSong = song;
@@ -24,7 +22,6 @@ struct MusicService::Helper {
 
 				self.playNextSong();
 			});
-
 		}
 
 		callback(SongStatus{ song.name, song.artist, true });	

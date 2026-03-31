@@ -1,59 +1,18 @@
 #include "MusicController.h"
 #include "MusicSerializer.h"
+#include "MusicStatusUpdater.h"
 
 #include "third_party/httplib.h"
 
 #include <string>
 #include <print>
-#include <shared_mutex>
-#include <condition_variable>
 
 
-class MusicStatusUpdater {
-	std::shared_mutex mtx{};
-	std::condition_variable_any cv{};
+static_assert(WritableSink<httplib::DataSink>, "httplib::DataSink matches the WritableSink concept");
 
-	std::string currentStatusStr = "data: " + to_string(SongStatus{}) + "\n\n";
-
-	bool update(httplib::DataSink& sink, const std::string& status) {
-		if (!sink.is_writable()) {
-			return false;
-		}
-		return sink.write(status.data(), status.size());
-	}
-
-public:
-	// Immediately send the current status.
-	// Then wait until there is an update. Once there is an update, return true to indicate
-	// to send the status again
-	bool waitForUpdate(httplib::DataSink& sink) {
-		std::string status;
-
-		{
-			std::shared_lock lock(mtx);
-			status = currentStatusStr;
-		}
-
-		if (!update(sink, status)) {
-			return false;
-		}
-
-		{
-			std::shared_lock lock(mtx);
-			cv.wait(lock);
-		}
-
-		return true;
-	}
-
-	void updateStatus(const SongStatus& status) {
-		std::unique_lock lock(mtx);
-		currentStatusStr = "data: " + to_string(status) + "\n\n";
-		cv.notify_all();
-	}
-};
 
 static MusicStatusUpdater statusUpdater{};
+
 
 void startServer(MusicService& musicService, int port, const std::string& mount_point) {
 	musicService.setOnSongStatusChange([](const SongStatus& status) {

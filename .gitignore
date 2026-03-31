@@ -7,3 +7,5 @@ debug/
 release/
 db/
 src/third_party/winlibs/
+TestResults/*
+tests/Testing/*

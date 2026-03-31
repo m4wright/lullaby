@@ -6,4 +6,6 @@ struct Song {
 	std::string name;
 	std::string artist;
 	std::string path;
+
+	auto operator<=>(const Song&) const = default;
 };

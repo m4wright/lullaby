@@ -16,7 +16,7 @@ class MusicService {
 	AudioPlayer player{};
 	MusicRepository musicRepository;
 	std::optional<Song> currentSong{};
-	std::function<void(const SongStatus&)> onSongStatusChange{};
+	std::function<void(const SongStatus&)> onSongStatusChange = [](const SongStatus&) {};
 
 	struct Helper;
 
@@ -48,11 +48,6 @@ public:
 
 	Song playPreviousSong() {
 		return playNextSong(false);
-	}
-	
-
-	void autoPlay() {
-		playNextSong();
 	}
 
 	void pause() {

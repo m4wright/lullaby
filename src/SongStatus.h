@@ -12,4 +12,6 @@ struct SongStatus {
 	}
 
 	SongStatus() : name(""), artist(""), playing(false) {}
+
+	auto operator<=>(const SongStatus&) const = default;
 };

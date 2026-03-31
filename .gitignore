@@ -1,7 +1,6 @@
 bin/
 out/
 .vs/
-.github/
 build/
 debug/
 release/

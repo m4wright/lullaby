@@ -5,9 +5,9 @@ After=default.target
 [Service]
 Type=simple
 WorkingDirectory=/home/mathew/Documents/lullaby
-# Sleep to ensure the audio drivers are up on device startup
+# Hack to ensure the audio drivers are up on device startup
 ExecStartPre=/bin/sleep 10s
-ExecStart=/home/mathew/Documents/lullaby/release/Lullabies
+ExecStart=/home/mathew/Documents/lullaby/release/Lullabies 9096 /home/mathew/Documents/lullaby
 Restart=always
 RestartSec=1
 

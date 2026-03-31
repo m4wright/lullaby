@@ -11,7 +11,7 @@ struct PlayWithWait {
 	std::future<bool> callbackCalledFuture = callbackCalledPromise.get_future();
 
 	PlayWithWait(AudioPlayer& player, const std::string& path = "/tmp/a.mp3") {
-		player.play_sound(path, [&] {
+		player.playSound(path, [&] {
 			callbackCalledPromise.set_value(true);
 		});
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));

@@ -54,14 +54,24 @@ public:
 		player.pause();
 
 		std::shared_lock lock(mtx);
-		onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, false });
+		if (currentSong) {
+			onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, false });
+		} else {
+			onSongStatusChange(SongStatus());
+		}
 	}
 
 	void resume() {
 		player.resume();
 
 		std::shared_lock lock(mtx);
-		onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, true });
+		if (currentSong) {
+			onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, true });
+		}
+		else {
+			onSongStatusChange(SongStatus());
+		}
+		
 	}
 
 	bool toggle() {

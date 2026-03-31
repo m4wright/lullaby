@@ -23,7 +23,7 @@ public:
     // Enqueue a request to play the given path. The worker thread will own
     // the sound instance and will invoke the provided callback when the
     // sound ends (the callback is invoked on the worker thread).
-    void play_sound(const std::string& path, std::function<void(void)> fn);
+    void playSound(std::string path, std::function<void(void)> fn);
 
     bool toggle();
 

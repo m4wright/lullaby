@@ -5,24 +5,32 @@
 
 struct MusicService::Helper {
 	static void playSong(MusicService& self, const Song& song) {
-		std::lock_guard lock(self.mtx);
-		self.currentSong = song;
+		std::function<void(const SongStatus&)> callback;
 
-		std::println("Playing {} by {}", song.name, song.artist);
 		
-		self.player.play_sound(song.path, [&] {
-			{
-				std::shared_lock lock(self.mtx);
-				std::println("{} by {} is done playing", self.currentSong->name, self.currentSong->artist);
-			}
 
-			self.playNextSong();
-		});
+		{
+			std::lock_guard lock(self.mtx);
+			self.currentSong = song;
+			callback = self.onSongStatusChange;
 
-		self.onSongStatusChange(SongStatus{song.name, song.artist, true});
+			std::println("Playing {} by {}", song.name, song.artist);
+
+			self.player.playSound(song.path, [&] {
+				{
+					std::shared_lock lock(self.mtx);
+					std::println("{} by {} is done playing", self.currentSong->name, self.currentSong->artist);
+				}
+
+				self.playNextSong();
+			});
+
+		}
+
+		callback(SongStatus{ song.name, song.artist, true });	
 	}
 
-	static const Song& songToPlay(MusicService& self, const std::vector<Song>& songs, bool forward) {
+	static Song songToPlay(MusicService& self, const std::vector<Song>& songs, bool forward) {
 		if (songs.empty()) {
 			throw std::runtime_error("There are no songs to play");
 		}
@@ -57,11 +65,10 @@ struct MusicService::Helper {
 Song MusicService::playNextSong(bool forward) {
 	auto songs = musicRepository.fetchAllSongs();
 
-	const Song& toPlay = Helper::songToPlay(*this, songs, forward);
-	Song returnSong = toPlay;
+	Song toPlay = Helper::songToPlay(*this, songs, forward);
 	Helper::playSong(*this, toPlay);
 
-	return returnSong;
+	return toPlay;
 }
 
 bool MusicService::play(const std::string& name, const std::string& artist) {

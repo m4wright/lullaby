@@ -3,11 +3,10 @@
 
 
 #include <string>
-#include <cstdlib>
 
 namespace {
     int determine_port(int argc, char** argv) {
-        return atoi(argv[1]);
+        return std::stoi(argv[1]);
     }
 
     const std::string& determine_base_path(int argc, char** argv) {

@@ -40,8 +40,8 @@ struct MusicRepository::Impl {
 
 		sqlite3_reset(stmt.get());
 
-		sqlite3_bind_text(stmt.get(), 1, name.c_str(), -1, SQLITE_TRANSIENT);
-		sqlite3_bind_text(stmt.get(), 2, artist.c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(stmt.get(), 1, name.c_str(), -1, SQLITE_STATIC);
+		sqlite3_bind_text(stmt.get(), 2, artist.c_str(), -1, SQLITE_STATIC);
 
 		std::optional<Song> result;
 
@@ -60,6 +60,8 @@ struct MusicRepository::Impl {
 	}
 
 	std::vector<Song> fetchAllSongs() {
+		std::lock_guard lock(mtx);
+
 		char* errorMessage = nullptr;
 		std::vector<Song> result{};
 

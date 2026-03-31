@@ -1,9 +1,9 @@
 # Lullabies
 
-Lullabies is a small Raspberry Pi application that plays lullabies to help my daughter fall asleep.
-It streams music to a Bluetooth speaker and provides a simple local web interface to control playback.
+Lullabies is a small application that plays lullabies to help my daughter fall asleep.
+It runs on a Raspberry Pi and streams music to a Bluetooth speaker that stays next to her bed. The app provides a web UI to choose a song, see what's playing, and play / pause.
 
-The system automatically plays the next song when the current one finishes, making it ideal for bedtime playlists.
+When one song finishes it automatically plays the next, looping around to the start once it's done.
 
 ---
 
@@ -11,21 +11,20 @@ The system automatically plays the next song when the current one finishes, maki
 
 ![Lullabies Web UI](docs/screenshot.png)
 
-The interface allows you to:
+The UI allows you to:
 
-* Browse the lullaby library
-* Play or pause songs
+* View the available songs
 * See the currently playing track
-* Automatically highlight the active song
+* Play or pause songs
 * Control playback from any device on the local network
 
-The UI updates in real time using **Server-Sent Events (SSE)**.
+The UI updates in real time using **Server-Sent Events (SSE)** when a song changes.
 
 ---
 
 # Architecture
 
-Lullabies runs on a **Raspberry Pi** and exposes a small web interface for controlling music playback.
+Lullabies runs on a **Raspberry Pi** and exposes a web UI to control music playback.
 The backend is written in **C++** and serves both the frontend and the playback API.
 
 ```mermaid
@@ -42,6 +41,7 @@ subgraph RaspberryPi["Raspberry Pi - Lullabies App"]
 subgraph Backend["C++ Backend (src/)"]
 
 Controller[MusicController]
+StatusUpdater[MusicStatusUpdater]
 Service[MusicService]
 Repository[MusicRepository]
 Serializer[MusicSerializer]
@@ -64,9 +64,12 @@ JS -->|HTTP API| Controller
 JS -->|SSE Updates| Controller
 
 Controller --> Service
+Controller --> Serializer
+Controller --> StatusUpdater
 Service --> Repository
 Service --> AudioPlayer
-Service --> Serializer
+
+StatusUpdater -->|SSE Updates| JS
 
 Repository --> SQLite
 
@@ -94,6 +97,26 @@ Browser->>Browser: highlight active song
 
 ---
 
+# Auto-Play Next Song Flow
+
+```mermaid
+sequenceDiagram
+
+miniaudio-->>AudioPlayer: ma_sound_set_end_proc called
+AudioPlayer-->>MusicService: playNextSong()
+MusicService-->>MusicRepository: fetchAllSongs()
+MusicRepository-->>MusicService: songs
+MusicService-->>MusicService: songToPlay(songs, currentSong)
+MusicService-->>AudioPlayer: play(nextSongName, nextSongArtist)
+AudioPlayer->>miniaudio: start playback
+MusicService-->>MusicController: onSongStatusChange(songStatus)
+MusicController-->>MusicStatusUpdater: updateStatus(songStatus)
+MusicStatusUpdater-->>Browser: SSE event with song status
+Browser-->>Browser: highlight new currently active song
+```
+
+---
+
 # Repository Structure
 
 ```
@@ -116,6 +139,9 @@ lullabies/
 │   ├── MusicRepository.h/.cpp  # Data access layer. Handles reading song
 │   │                           # information from the SQLite database.
 │   │
+│   ├── MusicStatusUpdater.h	# Used with SSE. Waits for status updates
+│   │                           # and publishes them to all active clients
+│   │
 │   ├── MusicSerializer.h/.cpp  # Converts C++ objects into JSON responses
 │   │                           # returned to the frontend.
 │   │
@@ -135,6 +161,10 @@ lullabies/
 │   ├── index.html              # Main UI page
 │   ├── script.js               # Frontend logic (API calls + SSE updates)
 │   └── style.css               # UI styling
+│
+├── tests/                      # Unit tests and mock implementations using GTEST
+│   ├── CMakeLists.txt			# Build instructions for tests
+│   ├── *.cpp / *.h				# Test cases and mock implementations of miniaudio and music repository
 │
 ├── db/
 │   └── music.db                # SQLite database storing the song library
@@ -175,11 +205,16 @@ Frontend
 * JavaScript
 * CSS
 
+Tests
+
+* GTEST
+
 ---
 
 # Building
 
-Build the project using:
+This project uses GitHub Actions to build and run tests for PRs.  
+To build and run the tests locally:
 
 ```bash
 ./scripts/build_release.sh
@@ -195,7 +230,7 @@ Restart the application:
 ./scripts/restart.sh
 ```
 
-Build and restart in one step:
+Build, test and restart in one step:
 
 ```bash
 ./scripts/build_and_run_release.sh
@@ -217,7 +252,7 @@ This allows the application to start automatically when the Raspberry Pi boots.
 
 # Adding Songs
 
-Songs are currently added manually to the database.
+Songs are currently added manually to the database. They don't normally change.
 
 Open the SQLite database:
 
@@ -235,17 +270,20 @@ INSERT INTO songs VALUES ('SongName', 'Artist', '/path/to/song.mp3');
 
 # Purpose
 
-This project was built as a simple and reliable way to play lullabies for my daughter at bedtime.
+This project was built to play lullabies for my daughter at bedtime. 
+The music plays off of a Raspberry Pi and bluetooth speaker, so that we can leave the room and continue to play the lullabies.
+It also allows us to listen to our own thing with our headphones while putting her to bed.
 
-Running everything locally on a **Raspberry Pi** keeps the system simple, reliable, and independent of external services.
 
 ---
 
 # Future Improvements
 
-Potential improvements include:
+The project is largely feature complete for this purpose, however potential improvements include:
 
+* Auto-pause after a certain period of inactivity
+* Improve test coverage
+* Add static analysis, address sanitizer, linter, and turn on more compile-time warnings and errors
 * Web interface for adding songs
 * Playlists
-* Auto-pause after a certain period of inactivity
 * Volume control

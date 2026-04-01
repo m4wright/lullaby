@@ -50,30 +50,6 @@ public:
 		return playNextSong(false);
 	}
 
-	void pause() {
-		player.pause();
-
-		std::shared_lock lock(mtx);
-		if (currentSong) {
-			onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, false });
-		} else {
-			onSongStatusChange(SongStatus());
-		}
-	}
-
-	void resume() {
-		player.resume();
-
-		std::shared_lock lock(mtx);
-		if (currentSong) {
-			onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, true });
-		}
-		else {
-			onSongStatusChange(SongStatus());
-		}
-		
-	}
-
 	bool toggle() {
 		bool isPlaying = player.toggle().get();
 

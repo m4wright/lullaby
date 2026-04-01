@@ -7,11 +7,8 @@
 #include <latch>
 
 
-namespace {
-	TempMusicRepository tempRepository{};
-}
-
 TEST(MusicServiceTest, Play) {
+	TempMusicRepository tempRepository{};
 	MusicService musicService{ MusicRepository{tempRepository.path()} };
 	std::mutex mtx;
 
@@ -49,4 +46,55 @@ TEST(MusicServiceTest, Play) {
 	fullSongRound.wait();
 
 	EXPECT_EQ(numSongs + 1, numTimesStatusChangeCalled);
+}
+
+TEST(MusicServiceTest, ToggleTest) {
+	TempMusicRepository tempRepository{};
+	MusicService musicService{ MusicRepository{tempRepository.path()} };
+
+	musicService.playNextSong();
+
+	bool isPlaying = musicService.toggle();
+	EXPECT_FALSE(isPlaying);
+
+	isPlaying = musicService.toggle();
+	EXPECT_TRUE(isPlaying);
+}
+
+TEST(MusicServiceTest, PlayNextAndPreviousSongTest) {
+	TempMusicRepository tempRepository{};
+	MusicService musicService{ MusicRepository{tempRepository.path()} };
+
+	musicService.playNextSong();
+	auto song = musicService.playNextSong();
+
+	auto expectedSong = Song{ .name = "B", .artist = "Artist2", .path = "/tmp/b.mp3" };
+	EXPECT_EQ(expectedSong, song);
+
+	song = musicService.playPreviousSong();
+	auto expectedSongFirstInList = Song{ .name = "A", .artist = "Artist1", .path = "/tmp/a.mp3" };
+	EXPECT_EQ(expectedSongFirstInList, song);
+
+	song = musicService.playPreviousSong();
+	auto expectedSongPreviousWrapped = Song{ .name = "C", .artist = "Artist3", .path = "/tmp/c.mp3" };
+	EXPECT_EQ(expectedSongPreviousWrapped, song);
+
+	song = musicService.playNextSong();
+	EXPECT_EQ(expectedSongFirstInList, song);
+}
+
+TEST(MusicServiceTest, StatusTest) {
+	TempMusicRepository tempRepository{};
+	MusicService musicService{ MusicRepository{tempRepository.path()} };
+
+	musicService.playNextSong();
+
+	auto status = musicService.getCurrentStatus();
+	auto expectedStatus = SongStatus("A", "Artist1", true);
+	EXPECT_EQ(expectedStatus, status);
+
+	musicService.toggle();
+	auto expectedPausedStatus = SongStatus("A", "Artist1", false);
+	status = musicService.getCurrentStatus();
+	EXPECT_EQ(expectedPausedStatus, status);
 }

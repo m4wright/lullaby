@@ -5,6 +5,7 @@
 
 #include <future>
 #include <chrono>
+#include <atomic>
 
 struct PlayWithWait {
 	std::promise<bool> callbackCalledPromise{};
@@ -61,4 +62,19 @@ TEST(AudioPlayer, Toggle) {
 
 	player.toggle().get();
 	EXPECT_TRUE(player.isPlaying());
+}
+
+TEST(AudioPlayer, PlayAnotherWhilePlaying) {
+	AudioPlayer player;
+
+	std::atomic<bool> songEndCalled = false;
+
+	player.playSound("/tmp/fake/A.mp3", [&] {
+		songEndCalled = true;
+	}).get();
+	EXPECT_TRUE(player.isPlaying());
+
+	player.playSound("/tmp/fake/B.mp3", [] {}).get();
+	EXPECT_TRUE(player.isPlaying());
+	EXPECT_FALSE(songEndCalled);
 }

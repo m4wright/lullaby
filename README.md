@@ -18,7 +18,20 @@ The UI allows you to:
 * Play or pause songs
 * Control playback from any device on the local network
 
-The UI updates in real time using **Server-Sent Events (SSE)** when a song changes.
+The main UI updates in real time using **Server-Sent Events (SSE)** when a song changes.
+
+---
+
+# Admin Panel
+
+![Admin Panel](docs/admin-screenshot.png)
+
+The admin panel at `/admin.html` provides a web interface for managing the song library:
+
+* Add new songs (title, artist, file path)
+* Edit existing song entries
+* Delete songs from the library
+* View all songs in the database
 
 ---
 
@@ -159,6 +172,8 @@ lullabies/
 │
 ├── static/                     # Frontend served by the backend HTTP server
 │   ├── index.html              # Main UI page
+│   ├── admin.html              # Admin panel for song management
+│   ├── admin.js                # Admin logic
 │   ├── script.js               # Frontend logic (API calls + SSE updates)
 │   └── style.css               # UI styling
 │
@@ -252,19 +267,12 @@ This allows the application to start automatically when the Raspberry Pi boots.
 
 # Adding Songs
 
-Songs are currently added manually to the database. They don't normally change.
+Songs are managed through the admin panel at `http://<host>:9096/admin.html`.
 
-Open the SQLite database:
-
-```bash
-sqlite3 db/music.db
-```
-
-Insert a new song:
-
-```sql
-INSERT INTO songs VALUES ('SongName', 'Artist', '/path/to/song.mp3');
-```
+The admin panel provides a web interface to:
+* Add new songs by entering the title, artist, and file path
+* Edit existing song entries
+* Delete songs from the library
 
 ---
 
@@ -284,6 +292,5 @@ The project is largely feature complete for this purpose, however potential impr
 * Auto-pause after a certain period of inactivity
 * Improve test coverage
 * Add static analysis, address sanitizer, linter, and turn on more compile-time warnings and errors
-* Web interface for adding songs
 * Playlists
 * Volume control

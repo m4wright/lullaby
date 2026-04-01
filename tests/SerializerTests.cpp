@@ -2,7 +2,9 @@
 
 #include "../src/MusicSerializer.h"
 
-
+#ifndef UNIT_TEST
+static_assert(false, "Tests must be compiled with UNIT_TEST defined");
+#endif
 TEST(Sanity, OnePlusOne) {
 #ifdef UNIT_TEST
     EXPECT_EQ(1 + 2, 3);

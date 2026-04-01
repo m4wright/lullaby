@@ -48,12 +48,12 @@ struct MusicService::Helper {
 			return songs[0];
 		}
 		else {
-			auto index = std::distance(songs.begin(), it);
+			int index = std::distance(songs.begin(), it);
 
 			int direction = forward ? 1 : -1;
-			auto size = songs.size();
+			int size = songs.size();
 
-			auto nextIndex = (((index + direction) % size) + size) % size;
+			int nextIndex = (((index + direction) % size) + size) % size;
 			return songs[nextIndex];
 		}
 	}

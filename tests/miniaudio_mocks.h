@@ -30,6 +30,7 @@ enum class SoundEvent {
 struct ma_sound {
 	std::mutex mtx;
 	std::vector<SoundEvent> events;
+	std::atomic<bool> stopped = false;
 };
 
 ma_result ma_sound_init_from_file(ma_engine* engine, const char* path, int, void*, void*, ma_sound* sound) {
@@ -44,10 +45,12 @@ void ma_sound_uninit(ma_sound* sound) {
 void ma_sound_start(ma_sound* sound) {
 	std::lock_guard<std::mutex> lock(sound->mtx);
 	sound->events.push_back(SoundEvent::START);
+	sound->stopped = false;
 }
 void ma_sound_stop(ma_sound* sound) {
 	std::lock_guard<std::mutex> lock(sound->mtx);
 	sound->events.push_back(SoundEvent::STOP);
+	sound->stopped = true;
 }
 
 // Returns true if a valid sequence of events has occurred leading to playing
@@ -89,7 +92,9 @@ ma_result ma_sound_set_end_callback(ma_sound* sound, ma_sound_end_proc callback,
 			std::lock_guard<std::mutex> lock(sound->mtx);
 			sound->events.push_back(SoundEvent::STOP);
 		}
-		callback(userData, sound);
+		if (!sound->stopped) {
+			callback(userData, sound);
+		}
 	}).detach();
 
 	return MA_SUCCESS;

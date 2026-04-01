@@ -13,6 +13,18 @@ std::string to_string(const std::vector<Song>& songs) {
 	return result.dump();
 }
 
+std::string to_string_with_path(const std::vector<Song>& songs) {
+	nlohmann::json j = nlohmann::json::array();
+	for (const auto& song : songs) {
+		nlohmann::json songJson;
+		songJson["name"] = song.name;
+		songJson["artist"] = song.artist;
+		songJson["path"] = song.path;
+		j.push_back(songJson);
+	}
+	return j.dump();
+}
+
 void to_json(nlohmann::json& j, const SongStatus& songStatus) {
 	if (!songStatus.name.empty() && !songStatus.artist.empty()) {
 		j["name"] = songStatus.name;

@@ -74,6 +74,18 @@ public:
 		return musicRepository.fetchAllSongs();
 	}
 
+	bool addSong(const std::string& name, const std::string& artist, const std::string& path) {
+		return musicRepository.addSong(name, artist, path);
+	}
+
+	bool updateSongPath(const std::string& name, const std::string& artist, const std::string& newPath) {
+		return musicRepository.updateSongPath(name, artist, newPath);
+	}
+
+	bool deleteSong(const std::string& name, const std::string& artist) {
+		return musicRepository.deleteSong(name, artist);
+	}
+
 	bool isPlaying() {
 		return player.isPlaying();
 	}

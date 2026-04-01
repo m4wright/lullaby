@@ -24,4 +24,8 @@ public:
 
 	std::vector<Song> fetchAllSongs();
 	std::optional<Song> fetchSong(const std::string & name, const std::string & artist);
+
+	bool addSong(const std::string& name, const std::string& artist, const std::string& path);
+	bool updateSongPath(const std::string& name, const std::string& artist, const std::string& newPath);
+	bool deleteSong(const std::string& name, const std::string& artist);
 };

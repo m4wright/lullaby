@@ -16,9 +16,20 @@ ctest                    # Run all tests
 ctest -R MusicService    # Run specific test suite by pattern
 ```
 
+## Running Locally
+
+```bash
+cd out/build/x64-Debug
+./Lullabies.exe 8080 ../../..
+```
+
+Access the web UI:
+- Player: http://localhost:8080
+- Admin (song management): http://localhost:8080/admin.html
+
 ## Git Workflow
 
-- Create a new branch for each feature or fix
+- For each feature or fix, first checkout and pull main, then create a new branch
 - Commit regularly with incremental checkpoints to enable easy reverts
 - Do not squash commits during development - the user will squash before pushing
 

@@ -13,25 +13,25 @@ TEST(MusicServiceTest, Play) {
 	std::mutex mtx;
 
 	int numTimesStatusChangeCalled = 0;
-	int numSongs = musicService.getAllSongs().size();
+	int numSongs = static_cast<int>(musicService.getAllSongs().size());
 	std::latch fullSongRound{ numSongs + 1 };
 
 	musicService.setOnSongStatusChange([&](const SongStatus& status) {
 		std::lock_guard<std::mutex> lock(mtx);
 		if (numTimesStatusChangeCalled == 0) {
-			auto expectedStatus = SongStatus{ "A", "Artist1", true };
+			auto expectedStatus = SongStatus{ "A", "Artist1", true, 100 };
 			EXPECT_EQ(expectedStatus, status);
 		}
 		else if (numTimesStatusChangeCalled == 1) {
-			auto expectedStatus = SongStatus{ "B", "Artist2", true };
+			auto expectedStatus = SongStatus{ "B", "Artist2", true, 100 };
 			EXPECT_EQ(expectedStatus, status);
 		}
 		else if (numTimesStatusChangeCalled == 2) {
-			auto expectedStatus = SongStatus{ "C", "Artist3", true };
+			auto expectedStatus = SongStatus{ "C", "Artist3", true, 100 };
 			EXPECT_EQ(expectedStatus, status);
 		}
 		else if (numTimesStatusChangeCalled == 3) {
-			auto expectedStatus = SongStatus{ "A", "Artist1", true };
+			auto expectedStatus = SongStatus{ "A", "Artist1", true, 100 };
 			EXPECT_EQ(expectedStatus, status);
 		}
 
@@ -90,11 +90,28 @@ TEST(MusicServiceTest, StatusTest) {
 	musicService.playNextSong();
 
 	auto status = musicService.getCurrentStatus();
-	auto expectedStatus = SongStatus("A", "Artist1", true);
+	auto expectedStatus = SongStatus("A", "Artist1", true, 100);
 	EXPECT_EQ(expectedStatus, status);
 
 	musicService.toggle();
-	auto expectedPausedStatus = SongStatus("A", "Artist1", false);
+	auto expectedPausedStatus = SongStatus("A", "Artist1", false, 100);
+	status = musicService.getCurrentStatus();
+	EXPECT_EQ(expectedPausedStatus, status);
+}
+
+
+TEST(MusicServiceTest, VolumeStatusTest) {
+	TempMusicRepository tempRepository{};
+	MusicService musicService{ MusicRepository{tempRepository.path()} };
+
+	musicService.playNextSong();
+
+	auto status = musicService.getCurrentStatus();
+	auto expectedStatus = SongStatus("A", "Artist1", true, 100);
+	EXPECT_EQ(expectedStatus, status);
+
+	musicService.setVolume(50);
+	auto expectedPausedStatus = SongStatus("A", "Artist1", true, 50);
 	status = musicService.getCurrentStatus();
 	EXPECT_EQ(expectedPausedStatus, status);
 }

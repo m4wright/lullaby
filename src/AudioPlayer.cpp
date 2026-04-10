@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <print>
+#include <atomic>
 
 
 #ifdef UNIT_TEST
@@ -70,6 +71,7 @@ struct AudioPlayer::Impl {
     std::optional<Sound> sound{};
     SingleThreadExecutor executor{};
     std::function<void()> callback = [] {};
+    std::atomic<float> volume = 1.0f;
 
     std::future<void> playSound(std::string path, std::function<void(void)> cb) {
         return executor.submit([this, path = std::move(path), cb = std::move(cb)] {
@@ -109,9 +111,10 @@ struct AudioPlayer::Impl {
         });
     }
 
-    bool isPlaying() {
-        auto future = executor.submit([this] {
-            return sound && sound->isPlaying();
+    template <typename F>
+    auto get(F&& f) {
+        auto future = executor.submit([f = std::move(f)] {
+            return f();
         });
 
         auto status = future.wait_for(std::chrono::seconds(5));
@@ -119,9 +122,26 @@ struct AudioPlayer::Impl {
         if (status == std::future_status::ready) {
             return future.get();
         }
-        throw std::runtime_error("Unable to check if a song is playing, the task didn't complete in time");
+        throw std::runtime_error("Unable to get the object from AudioPlayer::Impl, the task didn't complete in time");
     }
 
+    bool isPlaying() {
+        return get([this] {
+            return sound && sound->isPlaying();
+        });
+    }
+
+
+    float getVolume() {
+        return volume;
+    }
+
+    void setVolume(float volume) {
+        this->volume = volume;
+        executor.submit([this, volume] {
+            ma_engine_set_volume(engine.get(), volume);
+        });
+	}
     
 };
 
@@ -132,3 +152,6 @@ std::future<bool> AudioPlayer::toggle() { return impl->toggle(); }
 std::future<void> AudioPlayer::pause() { return impl->pause(); }
 std::future<void> AudioPlayer::resume() { return impl->resume(); }
 bool AudioPlayer::isPlaying() { return impl->isPlaying(); }
+
+float AudioPlayer::getVolume() { return impl->getVolume(); }
+void AudioPlayer::setVolume(float volume) { impl->setVolume(volume); }

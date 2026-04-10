@@ -5,6 +5,7 @@
 #include "third_party/httplib.h"
 
 #include <string>
+#include <format>
 #include <print>
 
 
@@ -79,6 +80,38 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 	server.Get("/music/media/play_previous", [&musicService](const httplib::Request& request, httplib::Response& response) {
 		Song song = musicService.playPreviousSong();
 		response.set_content("Playing " + song.name + " by " + song.artist, "text/plain");
+	});
+
+	server.Get("/volume", [&musicService](const httplib::Request& request, httplib::Response& response) {
+		int volume = musicService.getVolume();
+		response.set_content(to_volume_string(volume), "text/plain");
+	});
+
+	server.Put("/volume", [&musicService](const httplib::Request& request, httplib::Response& response) {
+		if (!request.has_param("volume")) {
+			response.set_content("Missing required field: volume", "text/plain");
+			response.status = 400;
+			return;
+		}
+
+		std::string volumeStr = request.get_param_value("volume");
+		int volume;
+		try {
+			volume = std::stoi(volumeStr);
+		} catch (const std::exception&) {
+			response.set_content("Invalid volume value", "text/plain");
+			response.status = 400;
+			return;
+		}
+
+		if (volume < 0 || volume > 100) {
+			response.set_content("Volume must be between 0 and 100", "text/plain");
+			response.status = 400;
+			return;
+		}
+		musicService.setVolume(volume);
+
+		response.set_content("Changed the volume to " + volumeStr, "text/plain");
 	});
 
 	server.Get("/admin/exit", [&server](const httplib::Request&, httplib::Response& response) {

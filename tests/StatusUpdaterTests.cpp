@@ -19,42 +19,53 @@ struct MockWritableSink {
 	}
 };
 
-const static std::string expectedFirstEmptyStatus = R"(data: {"event":"message","playing":false}
+const static std::string expectedFirstEmptyStatus = R"(data: {"event":"message","playing":false,"volume":100}
 
 )";
 
-const static std::string expectedCurrentStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true}
+const static std::string expectedCurrentStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
 
 )";
 
-const static std::string expectedLastStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song C","playing":true}
+const static std::string expectedLastStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song C","playing":true,"volume":100}
 
 )";
 
 const static std::vector<SongStatus> statuses{
-	SongStatus("Song A", "Artist1", true),
+	SongStatus("Song A", "Artist1", true, 100),
 
 	// Simulates pausing the song
-	SongStatus("Song A", "Artist1", false),
+	SongStatus("Song A", "Artist1", false, 100),
 	// Simulates resuming
-	SongStatus("Song A", "Artist1", true),
+	SongStatus("Song A", "Artist1", true, 100),
 
-	SongStatus("Song B", "Artist2", true),
-	SongStatus("Song C", "Artist1", true)
+	// Simulates volume changing
+	SongStatus("Song A", "Artist1", true, 29),
+	// Simulates volume changing back
+	SongStatus("Song A", "Artist1", true, 100),
+
+	SongStatus("Song B", "Artist2", true, 100),
+	SongStatus("Song C", "Artist1", true, 100)
 };
 
 const static std::vector<std::string> statusStrings{
 	expectedFirstEmptyStatus,
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
 
 )",
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":false}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":false,"volume":100}
 
 )",
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
 
 )",
-	R"(data: {"artist":"Artist2","event":"message","name":"Song B","playing":true}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":29}
+
+)",
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
+
+)",
+	R"(data: {"artist":"Artist2","event":"message","name":"Song B","playing":true,"volume":100}
 
 )"
 };
@@ -74,7 +85,7 @@ TEST(StatusUpdater, WaitForUpdateTest) {
 		});
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		statusUpdater.updateStatus(SongStatus("Song A", "Artist1", true));
+		statusUpdater.updateStatus(SongStatus("Song A", "Artist1", true, 100));
 	}
 
 	EXPECT_EQ(1, sink.messages.size());
@@ -169,7 +180,7 @@ TEST(StatusUpdater, FirstWriteSuccessSecondWriteFailTest) {
 		});
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		statusUpdater.updateStatus(SongStatus("Song A", "Artist1", true));
+		statusUpdater.updateStatus(SongStatus("Song A", "Artist1", true, 100));
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 

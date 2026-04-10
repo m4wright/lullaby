@@ -29,23 +29,23 @@ TEST(Serialize, SerializeSongs) {
 TEST(Serialize, SerializeNotPlayingStatus) {
     SongStatus defaultNotPlayingStatus{};
 
-    std::string expectedJson = R"({"event":"message","playing":false})";
+    std::string expectedJson = R"({"event":"message","playing":false,"volume":100})";
 
     EXPECT_EQ(expectedJson, to_string(defaultNotPlayingStatus));
 }
 
 TEST(Serialize, SerializePlayingStatus) {
-    SongStatus songStatus{ "Song A", "Artist A", true };
+    SongStatus songStatus{ "Song A", "Artist A", true, 100 };
 
-    std::string expectedJson = R"({"artist":"Artist A","event":"message","name":"Song A","playing":true})";
+    std::string expectedJson = R"({"artist":"Artist A","event":"message","name":"Song A","playing":true,"volume":100})";
 
     EXPECT_EQ(expectedJson, to_string(songStatus));
 }
 
 TEST(Serialize, SerializePausedStatus) {
-    SongStatus songStatus{ "Song A", "Artist A", false };
+    SongStatus songStatus{ "Song A", "Artist A", false, 100 };
 
-    std::string expectedJson = R"({"artist":"Artist A","event":"message","name":"Song A","playing":false})";
+    std::string expectedJson = R"({"artist":"Artist A","event":"message","name":"Song A","playing":false,"volume":100})";
 
     EXPECT_EQ(expectedJson, to_string(songStatus));
 }
@@ -53,15 +53,15 @@ TEST(Serialize, SerializePausedStatus) {
 TEST(Serialize, SerializeSongListAndStatus_NotPlaying) {
     SongStatus songStatus{};
 
-    std::string expectedJson = R"({"now_playing":{"event":"message","playing":false},"songs":[{"artist":"Artist A","name":"Song A"},{"artist":"Artist A","name":"Song B"},{"artist":"Artist B","name":"Song C"}]})";
+    std::string expectedJson = R"({"now_playing":{"event":"message","playing":false,"volume":100},"songs":[{"artist":"Artist A","name":"Song A"},{"artist":"Artist A","name":"Song B"},{"artist":"Artist B","name":"Song C"}]})";
 
     EXPECT_EQ(expectedJson, to_string(songs, songStatus));
 }
 
 TEST(Serialize, SerializeSongListAndStatus_Playing) {
-    SongStatus songStatus{"Song A", "Artist A", true};
+    SongStatus songStatus{"Song A", "Artist A", true, 32 };
 
-    std::string expectedJson = R"({"now_playing":{"artist":"Artist A","event":"message","name":"Song A","playing":true},"songs":[{"artist":"Artist A","name":"Song A"},{"artist":"Artist A","name":"Song B"},{"artist":"Artist B","name":"Song C"}]})";
+    std::string expectedJson = R"({"now_playing":{"artist":"Artist A","event":"message","name":"Song A","playing":true,"volume":32},"songs":[{"artist":"Artist A","name":"Song A"},{"artist":"Artist A","name":"Song B"},{"artist":"Artist B","name":"Song C"}]})";
 
     EXPECT_EQ(expectedJson, to_string(songs, songStatus));
 }

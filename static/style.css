@@ -116,6 +116,71 @@ html, body {
 }
 
 /* =========================
+   VOLUME CONTROL
+   ========================= */
+
+.volume-control-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.volume-icon {
+    font-size: 18px;
+    opacity: 0.8;
+    min-width: 24px;
+}
+
+.volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #3a3a3a;
+    cursor: pointer;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.08s ease;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+}
+
+.volume-display {
+    font-size: 13px;
+    opacity: 0.7;
+    min-width: 35px;
+    text-align: right;
+}
+
+/* =========================
    CONTROLS ROW
    ========================= */
 

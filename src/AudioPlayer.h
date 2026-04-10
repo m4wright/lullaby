@@ -32,4 +32,7 @@ public:
     std::future<void> resume();
 
     bool isPlaying();
+
+	float getVolume();
+    void setVolume(float volume);
 };

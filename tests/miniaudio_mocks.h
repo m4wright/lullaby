@@ -12,7 +12,10 @@ enum ma_result {
 
 
 
-struct ma_engine {};
+struct ma_engine {
+	std::mutex mtx;
+	float volume = 1.0f;
+};
 ma_result ma_engine_init(void*, ma_engine* engine) {
 	return MA_SUCCESS;
 }
@@ -98,4 +101,9 @@ ma_result ma_sound_set_end_callback(ma_sound* sound, ma_sound_end_proc callback,
 	}).detach();
 
 	return MA_SUCCESS;
+}
+
+void ma_engine_set_volume(ma_engine* engine, float volume) {
+	std::lock_guard<std::mutex> lock(engine->mtx);
+	engine->volume = volume;
 }

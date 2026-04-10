@@ -30,8 +30,8 @@ class MusicService {
 	// This method should be called with the lock held
 	SongStatus determineSongStatus() {
 		return currentSong.has_value()
-			? SongStatus(currentSong->name, currentSong->artist, isPlaying())
-			: SongStatus();
+			? SongStatus(currentSong->name, currentSong->artist, isPlaying(), getVolume())
+			: SongStatus(getVolume());
 	}
 	
 public:
@@ -55,10 +55,10 @@ public:
 
 		std::shared_lock lock(mtx);
 		if (currentSong) {
-			onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, isPlaying });
+			onSongStatusChange(SongStatus{ currentSong->name, currentSong->artist, isPlaying, getVolume()});
 		}
 		else {
-			onSongStatusChange(SongStatus{});
+			onSongStatusChange(SongStatus{getVolume()});
 		}
 
 		return isPlaying;
@@ -93,5 +93,16 @@ public:
 	SongStatus getCurrentStatus() {
 		std::shared_lock lock(mtx);
 		return determineSongStatus();
+	}
+
+	void setVolume(int volume) {
+		player.setVolume(static_cast<float>(volume) / 100.0f);
+
+		std::shared_lock lock(mtx);
+		onSongStatusChange(determineSongStatus());
+	}
+
+	int getVolume() {
+		return static_cast<int>(player.getVolume() * 100.0f);
 	}
 };

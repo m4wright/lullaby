@@ -34,7 +34,6 @@ namespace {
     };
 
     class Sound {
-        bool isInitialized = false;
         ma_sound sound{};
 
     public:
@@ -45,13 +44,10 @@ namespace {
                 std::println("Failed to initialize ma_sound with error code {}", static_cast<int>(result));
                 throw std::runtime_error("Failed to initialize ma_sound");
             }
-            isInitialized = true;
         }
 
         ~Sound() {
-            if (isInitialized) {
-                ma_sound_uninit(&sound);
-            }
+            ma_sound_uninit(&sound);
         }
         ma_sound* get() { return &sound; }
 
@@ -60,9 +56,9 @@ namespace {
         Sound(Sound&&) = delete;
         Sound& operator=(Sound&&) = delete;
 
-        void start() { if (!isInitialized) throw std::logic_error("Sound not initialized"); ma_sound_start(&sound); }
-        void stop() { if (!isInitialized) throw std::logic_error("Sound not initialized"); ma_sound_stop(&sound); }
-        bool isPlaying() const { return isInitialized && ma_sound_is_playing(&sound); }
+        void start() { ma_sound_start(&sound); }
+        void stop() { ma_sound_stop(&sound); }
+        bool isPlaying() const { return ma_sound_is_playing(&sound); }
     };
 }
 

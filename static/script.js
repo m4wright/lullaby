@@ -3,10 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const playPauseBtn = document.getElementById('play-pause-btn');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeDisplay = document.getElementById('volume-display');
 
     let songs = [];
     let currentSongIndex = -1;
     let isPlaying = false;
+    let currentVolume = 100;
 
     const hostPort = window.location.origin;
 
@@ -16,11 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventSource();
 
-    function updateNowPlayingUI(name, artist, playing) {
+    function updateNowPlayingUI(name, artist, playing, volume) {
 
         isPlaying = playing;
 
         console.log("Updating now playing UI: ", { name, artist, playing });
+
+        // Update the volume slider
+        currentVolume = Math.round(volume);
+        volumeSlider.value = currentVolume;
+        volumeDisplay.textContent = currentVolume + '%';
 
         // Also update the active song in the list if name/artist are provided
         if (name && artist) {
@@ -36,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initEventSource() {
         eventSource.onmessage = (event) => {
             const message = JSON.parse(event.data);
-            updateNowPlayingUI(message.name, message.artist, message.playing);
+            updateNowPlayingUI(message.name, message.artist, message.playing, message.volume);
         };
     }
 
@@ -62,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 var nowPlaying = status.now_playing;
 
-                updateNowPlayingUI(nowPlaying.name, nowPlaying.artist, nowPlaying.playing);
+                updateNowPlayingUI(nowPlaying.name, nowPlaying.artist, nowPlaying.playing, nowPlaying.volume);
 
                 renderSongList();
             })
@@ -127,5 +135,28 @@ document.addEventListener('DOMContentLoaded', () => {
         playNextSong();
         nextBtn.classList.add('clicked');
         setTimeout(() => nextBtn.classList.remove('clicked'), 200);
+    });
+
+    // Volume control
+    function getVolume() {
+        fetch(`${hostPort}/volume`)
+            .then(response => response.json())
+            .then(data => {
+                currentVolume = Math.round(data.volume);
+                volumeSlider.value = currentVolume;
+                volumeDisplay.textContent = currentVolume + '%';
+            })
+            .catch(error => console.error('Error fetching volume:', error));
+    }
+
+    function setVolume(volume) {
+        fetch(`${hostPort}/volume?volume=${volume}`, { method: 'PUT' })
+            .catch(error => console.error('Error setting volume:', error));
+    }
+
+    volumeSlider.addEventListener('input', () => {
+        const volume = volumeSlider.value;
+        volumeDisplay.textContent = volume + '%';
+        setVolume(volume);
     });
 });

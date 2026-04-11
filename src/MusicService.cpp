@@ -24,7 +24,7 @@ struct MusicService::Helper {
 			});
 		}
 
-		callback(SongStatus{ song.name, song.artist, true });	
+		callback(SongStatus{ song.name, song.artist, true, self.getVolume() });
 	}
 
 	static Song songToPlay(MusicService& self, const std::vector<Song>& songs, bool forward) {
@@ -48,10 +48,10 @@ struct MusicService::Helper {
 			return songs[0];
 		}
 		else {
-			int index = std::distance(songs.begin(), it);
+			int index = static_cast<int>(std::distance(songs.begin(), it));
 
 			int direction = forward ? 1 : -1;
-			int size = songs.size();
+			int size = static_cast<int>(songs.size());
 
 			int nextIndex = (((index + direction) % size) + size) % size;
 			return songs[nextIndex];

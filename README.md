@@ -1,7 +1,7 @@
 # Lullabies
 
 Lullabies is a small application that plays lullabies to help my daughter fall asleep.
-It runs on a Raspberry Pi and streams music to a Bluetooth speaker that stays next to her bed. The app provides a web UI to choose a song, see what's playing, and play / pause.
+It runs on a Raspberry Pi and streams music to a Bluetooth speaker that stays next to her bed. The app provides a web UI to choose a song, see what's playing, play / pause, and control the volume.
 
 When one song finishes it automatically plays the next, looping around to the start once it's done.
 
@@ -17,8 +17,9 @@ The UI allows you to:
 * See the currently playing track
 * Play or pause songs
 * Control playback from any device on the local network
+* Change the volume
 
-The main UI updates in real time using **Server-Sent Events (SSE)** when a song changes.
+The main UI updates in real time using **Server-Sent Events (SSE)** when a song or the volume changes.
 
 ---
 
@@ -293,4 +294,4 @@ The project is largely feature complete for this purpose, however potential impr
 * Improve test coverage
 * Add static analysis, address sanitizer, linter, and turn on more compile-time warnings and errors
 * Playlists
-* Volume control
+

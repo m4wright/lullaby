@@ -33,6 +33,7 @@ void to_json(nlohmann::json& j, const SongStatus& songStatus) {
 
 	j["event"] = "message";
 	j["playing"] = songStatus.playing;
+	j["volume"] = songStatus.volume;
 }
 
 std::string to_string(const SongStatus& songStatus) {
@@ -45,5 +46,11 @@ std::string to_string(const std::vector<Song>& songs, const SongStatus& songStat
 	result["songs"] = songs;
 	result["now_playing"] = songStatus;
 
+	return result.dump();
+}
+
+std::string to_volume_string(int volume) {
+	nlohmann::json result;
+	result["volume"] = volume;
 	return result.dump();
 }

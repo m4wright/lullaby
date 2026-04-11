@@ -78,3 +78,18 @@ TEST(AudioPlayer, PlayAnotherWhilePlaying) {
 	EXPECT_TRUE(player.isPlaying());
 	EXPECT_FALSE(songEndCalled);
 }
+
+TEST(AudioPlayer, SetAndGetVolume) {
+	AudioPlayer player;
+
+	player.setVolume(0.5f);
+	EXPECT_FLOAT_EQ(0.5f, player.getVolume());
+}
+
+TEST(AudioPlayer, ChangeVolumeNextSong) {
+	AudioPlayer player;
+
+	player.setVolume(0.3f);
+	player.playSound("/tmp/fake/B.mp3", [] {}).get();
+	EXPECT_FLOAT_EQ(0.3f, player.getVolume());
+}

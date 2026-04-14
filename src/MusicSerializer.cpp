@@ -49,6 +49,26 @@ std::string to_string(const std::vector<Song>& songs, const SongStatus& songStat
 	return result.dump();
 }
 
+std::string to_string(const SongStatus& songStatus, const TimerState& timerState) {
+	nlohmann::json result = songStatus;
+
+	nlohmann::json timerJson;
+	timerJson["enabled"] = timerState.enabled;
+	timerJson["duration_minutes"] = timerState.duration_minutes;
+	timerJson["remaining_seconds"] = timerState.remaining_seconds;
+	result["timer"] = timerJson;
+
+	return result.dump();
+}
+
+std::string to_string(const std::vector<Song>& songs, const SongStatus& songStatus, const TimerState& timerState) {
+	nlohmann::json result;
+	result["songs"] = songs;
+	result["now_playing"] = nlohmann::json::parse(to_string(songStatus, timerState));
+
+	return result.dump();
+}
+
 std::string to_volume_string(int volume) {
 	nlohmann::json result;
 	result["volume"] = volume;

@@ -3,6 +3,7 @@
 #include "MusicStatusUpdater.h"
 
 #include "third_party/httplib.h"
+#include "third_party/json.hpp"
 
 #include <string>
 #include <format>
@@ -16,8 +17,8 @@ static MusicStatusUpdater statusUpdater{};
 
 
 void startServer(MusicService& musicService, int port, const std::string& mount_point) {
-	musicService.setOnSongStatusChange([](const SongStatus& status) {
-		statusUpdater.updateStatus(status);
+	musicService.setOnSongStatusChange([&musicService](const SongStatus& status) {
+		statusUpdater.updateStatus(status, musicService.getTimerState());
 	});
 
 	httplib::Server server;
@@ -27,8 +28,9 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 	server.Get("/music", [&musicService](const httplib::Request&, httplib::Response& response) {
 		std::vector<Song> songs = musicService.getAllSongs();
 		SongStatus status = musicService.getCurrentStatus();
+		TimerState timerState = musicService.getTimerState();
 
-		response.set_content(to_string(songs, status), "application/json");
+		response.set_content(to_string(songs, status, timerState), "application/json");
 	});
 
 	server.Get("/music/now-playing", [&musicService](const httplib::Request&, httplib::Response& response) {
@@ -112,6 +114,50 @@ void startServer(MusicService& musicService, int port, const std::string& mount_
 		musicService.setVolume(volume);
 
 		response.set_content("Changed the volume to " + volumeStr, "text/plain");
+	});
+
+	// Timer API
+	server.Post("/timer/enabled", [&musicService](const httplib::Request& request, httplib::Response& response) {
+		if (!request.has_param("enabled")) {
+			response.set_content("Missing required field: enabled", "text/plain");
+			response.status = 400;
+			return;
+		}
+
+		std::string enabledStr = request.get_param_value("enabled");
+		bool enabled = enabledStr == "true";
+
+		musicService.setTimerEnabled(enabled);
+
+		response.set_content(enabled ? "Timer enabled" : "Timer disabled", "text/plain");
+	});
+
+	server.Post("/timer/duration", [&musicService](const httplib::Request& request, httplib::Response& response) {
+		if (!request.has_param("minutes")) {
+			response.set_content("Missing required field: minutes", "text/plain");
+			response.status = 400;
+			return;
+		}
+
+		std::string minutesStr = request.get_param_value("minutes");
+		int minutes;
+		try {
+			minutes = std::stoi(minutesStr);
+		} catch (const std::exception&) {
+			response.set_content("Invalid minutes value", "text/plain");
+			response.status = 400;
+			return;
+		}
+
+		if (minutes < 1 || minutes > 120) {
+			response.set_content("Duration must be between 1 and 120 minutes", "text/plain");
+			response.status = 400;
+			return;
+		}
+
+		musicService.setTimerDuration(minutes);
+
+		response.set_content("Timer duration set to " + minutesStr + " minutes", "text/plain");
 	});
 
 	server.Get("/admin/exit", [&server](const httplib::Request&, httplib::Response& response) {

@@ -5,11 +5,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('next-btn');
     const volumeSlider = document.getElementById('volume-slider');
     const volumeDisplay = document.getElementById('volume-display');
+    const timerDisplay = document.getElementById('timer-display');
+    const timerModal = document.getElementById('timer-modal');
+    const timerModalClose = document.getElementById('timer-modal-close');
+    const timerEnabledCheckbox = document.getElementById('timer-enabled-checkbox');
+    const timerDurationSelect = document.getElementById('timer-duration-select');
+    const timerStatusText = document.getElementById('timer-status-text');
 
     let songs = [];
     let currentSongIndex = -1;
     let isPlaying = false;
     let currentVolume = 100;
+
+    // Timer state
+    let timerEnabled = false;
+    let timerDuration = 15; // minutes
+    let timerRemaining = null; // seconds, null when not counting down
 
     const hostPort = window.location.origin;
 
@@ -19,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initEventSource();
 
-    function updateNowPlayingUI(name, artist, playing, volume) {
+    function updateNowPlayingUI(name, artist, playing, volume, timerState) {
 
         isPlaying = playing;
 
@@ -29,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentVolume = Math.round(volume);
         volumeSlider.value = currentVolume;
         volumeDisplay.textContent = currentVolume + '%';
+
+        // Update timer state from backend
+        if (timerState) {
+            updateTimerState(timerState.enabled, timerState.duration_minutes, timerState.remaining_seconds);
+        }
 
         // Also update the active song in the list if name/artist are provided
         if (name && artist) {
@@ -41,10 +57,34 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSongListActiveState();
     }
 
+    function updateTimerState(enabled, duration, remaining) {
+        timerEnabled = enabled;
+        timerDuration = duration;
+        timerRemaining = remaining;
+
+        // Update timer display
+        if (timerEnabled && timerRemaining !== null) {
+            const mins = Math.floor(timerRemaining / 60);
+            const secs = timerRemaining % 60;
+            timerDisplay.textContent = `⏱ ${mins}:${secs.toString().padStart(2, '0')}`;
+            timerDisplay.classList.add('active');
+        } else {
+            timerDisplay.textContent = '⏱ --:--';
+            timerDisplay.classList.remove('active');
+        }
+
+        // Update modal UI
+        timerEnabledCheckbox.checked = timerEnabled;
+        timerDurationSelect.value = timerDuration.toString();
+        timerStatusText.textContent = timerEnabled && timerRemaining !== null
+            ? `Status: Active - ${Math.floor(timerRemaining / 60)}:${(timerRemaining % 60).toString().padStart(2, '0')} remaining`
+            : 'Status: Inactive';
+    }
+
     function initEventSource() {
         eventSource.onmessage = (event) => {
             const message = JSON.parse(event.data);
-            updateNowPlayingUI(message.name, message.artist, message.playing, message.volume);
+            updateNowPlayingUI(message.name, message.artist, message.playing, message.volume, message.timer);
         };
     }
 
@@ -70,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 var nowPlaying = status.now_playing;
 
-                updateNowPlayingUI(nowPlaying.name, nowPlaying.artist, nowPlaying.playing, nowPlaying.volume);
+                updateNowPlayingUI(nowPlaying.name, nowPlaying.artist, nowPlaying.playing, nowPlaying.volume, status.timer);
 
                 renderSongList();
             })
@@ -159,4 +199,44 @@ document.addEventListener('DOMContentLoaded', () => {
         volumeDisplay.textContent = volume + '%';
         setVolume(volume);
     });
+
+    // Timer modal handling
+    timerDisplay.addEventListener('click', () => {
+        timerModal.classList.add('show');
+    });
+
+    timerModalClose.addEventListener('click', () => {
+        timerModal.classList.remove('show');
+    });
+
+    timerModal.addEventListener('click', (e) => {
+        if (e.target === timerModal) {
+            timerModal.classList.remove('show');
+        }
+    });
+
+    // Timer enabled toggle
+    timerEnabledCheckbox.addEventListener('change', () => {
+        const enabled = timerEnabledCheckbox.checked;
+        fetch(`${hostPort}/timer/enabled?enabled=${enabled}`, { method: 'POST' })
+            .catch(error => console.error('Error toggling timer:', error));
+    });
+
+    // Timer duration change
+    timerDurationSelect.addEventListener('change', () => {
+        const duration = parseInt(timerDurationSelect.value, 10);
+        fetch(`${hostPort}/timer/duration?minutes=${duration}`, { method: 'POST' })
+            .catch(error => console.error('Error setting timer duration:', error));
+    });
+
+    // Countdown timer update every second
+    setInterval(() => {
+        if (timerEnabled && timerRemaining !== null && timerRemaining > 0) {
+            timerRemaining--;
+            const mins = Math.floor(timerRemaining / 60);
+            const secs = timerRemaining % 60;
+            timerDisplay.textContent = `⏱ ${mins}:${secs.toString().padStart(2, '0')}`;
+            timerStatusText.textContent = `Status: Active - ${mins}:${secs.toString().padStart(2, '0')} remaining`;
+        }
+    }, 1000);
 });

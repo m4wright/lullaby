@@ -19,15 +19,15 @@ struct MockWritableSink {
 	}
 };
 
-const static std::string expectedFirstEmptyStatus = R"(data: {"event":"message","playing":false,"volume":100}
+const static std::string expectedFirstEmptyStatus = R"(data: {"event":"message","playing":false,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )";
 
-const static std::string expectedCurrentStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
+const static std::string expectedCurrentStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )";
 
-const static std::string expectedLastStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song C","playing":true,"volume":100}
+const static std::string expectedLastStatusString = R"(data: {"artist":"Artist1","event":"message","name":"Song C","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )";
 
@@ -50,22 +50,22 @@ const static std::vector<SongStatus> statuses{
 
 const static std::vector<std::string> statusStrings{
 	expectedFirstEmptyStatus,
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )",
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":false,"volume":100}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":false,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )",
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )",
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":29}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":29}
 
 )",
-	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"volume":100}
+	R"(data: {"artist":"Artist1","event":"message","name":"Song A","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )",
-	R"(data: {"artist":"Artist2","event":"message","name":"Song B","playing":true,"volume":100}
+	R"(data: {"artist":"Artist2","event":"message","name":"Song B","playing":true,"timer":{"duration_minutes":15,"enabled":false,"remaining_seconds":null},"volume":100}
 
 )"
 };

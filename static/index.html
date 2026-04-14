@@ -30,6 +30,7 @@
                 <span class="volume-icon">🔊</span>
                 <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100">
                 <span id="volume-display" class="volume-display">100%</span>
+                <span id="timer-display" class="timer-display" title="Click to configure inactivity timer">⏱ --:--</span>
             </div>
 
             <div class="player-controls-row">
@@ -42,6 +43,38 @@
             </div>
         </footer>
 
+    </div>
+
+    <!-- Inactivity Timer Settings Modal -->
+    <div id="timer-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Inactivity Timer</h3>
+                <button id="timer-modal-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="timer-setting">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="timer-enabled-checkbox">
+                        Enable inactivity timer
+                    </label>
+                </div>
+                <div class="timer-setting">
+                    <label for="timer-duration-select">Timeout duration:</label>
+                    <select id="timer-duration-select" class="timer-duration-select">
+                        <option value="5">5 minutes</option>
+                        <option value="10">10 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">60 minutes</option>
+                    </select>
+                </div>
+                <div class="timer-status">
+                    <span id="timer-status-text">Status: Inactive</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

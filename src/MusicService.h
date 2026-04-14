@@ -8,8 +8,17 @@
 #include <vector>
 #include <optional>
 #include <shared_mutex>
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <optional>
 
-
+struct TimerState {
+	bool enabled = false;
+	int duration_minutes = 15;
+	std::optional<int> remaining_seconds = std::nullopt;
+};
 
 class MusicService {
 	std::shared_mutex mtx;
@@ -17,6 +26,16 @@ class MusicService {
 	MusicRepository musicRepository;
 	std::optional<Song> currentSong{};
 	std::function<void(const SongStatus&)> onSongStatusChange = [](const SongStatus&) {};
+
+	// Timer state - uses atomic for enabled flag, mutex-protected for rest
+	std::atomic<bool> timerEnabled{false};
+	mutable std::shared_mutex timerMtx;
+	TimerState timerState{};
+	std::thread timerThread;
+	std::atomic<bool> timerThreadRunning{false};
+
+	void startTimerThread();
+	void resetTimer();
 
 	struct Helper;
 
@@ -35,7 +54,11 @@ class MusicService {
 	}
 	
 public:
-	MusicService(MusicRepository&& repository) : musicRepository(std::move(repository)) {}
+	MusicService(MusicRepository&& repository) : musicRepository(std::move(repository)) {
+#ifndef UNIT_TEST
+		startTimerThread();
+#endif
+	}
 
 	void setOnSongStatusChange(std::function<void(const SongStatus&)> callback) {
 		std::lock_guard lock(mtx);
@@ -43,15 +66,19 @@ public:
 	}
 
 	Song playNextSong() {
+		resetTimer();
 		return playNextSong(true);
 	}
 
 	Song playPreviousSong() {
+		resetTimer();
 		return playNextSong(false);
 	}
 
 	bool toggle() {
 		bool isPlaying = player.toggle().get();
+
+		resetTimer();
 
 		std::shared_lock lock(mtx);
 		if (currentSong) {
@@ -105,4 +132,11 @@ public:
 	int getVolume() {
 		return static_cast<int>(player.getVolume() * 100.0f);
 	}
+
+	// Timer methods
+	bool isTimerEnabled() const { return timerEnabled.load(); }
+	TimerState getTimerState() const;
+	void setTimerEnabled(bool enabled);
+	void setTimerDuration(int minutes);
+	TimerState getTimerStateAndResetIfActive() const;
 };

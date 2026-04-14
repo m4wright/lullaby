@@ -9,3 +9,4 @@ src/third_party/winlibs/
 TestResults/*
 tests/Testing/*
 .claude/
+Testing/

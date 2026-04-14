@@ -2,6 +2,73 @@
 
 #include <print>
 #include <vector>
+#include <mutex>
+
+TimerState MusicService::getTimerState() const {
+	std::shared_lock lock(timerMtx);
+	return timerState;
+}
+
+void MusicService::setTimerEnabled(bool enabled) {
+	timerEnabled.store(enabled);
+	{
+		std::unique_lock lock(timerMtx);
+		timerState.enabled = enabled;
+		if (enabled && timerState.remaining_seconds == std::nullopt) {
+			timerState.remaining_seconds = timerState.duration_minutes * 60;
+		} else if (!enabled) {
+			timerState.remaining_seconds = std::nullopt;
+		}
+	}
+	resetTimer();
+}
+
+void MusicService::setTimerDuration(int minutes) {
+	{
+		std::unique_lock lock(timerMtx);
+		timerState.duration_minutes = minutes;
+		if (timerState.enabled && timerState.remaining_seconds == std::nullopt) {
+			timerState.remaining_seconds = minutes * 60;
+		}
+	}
+	resetTimer();
+}
+
+void MusicService::resetTimer() {
+	std::unique_lock lock(timerMtx);
+	if (timerState.enabled) {
+		timerState.remaining_seconds = timerState.duration_minutes * 60;
+	}
+}
+
+void MusicService::startTimerThread() {
+	timerThreadRunning.store(true);
+	timerThread = std::thread([this]() {
+		while (timerThreadRunning.load()) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+
+			if (timerEnabled.load()) {
+				std::unique_lock lock(timerMtx);
+				if (timerState.enabled && timerState.remaining_seconds.has_value() && timerState.remaining_seconds.value() > 0) {
+					timerState.remaining_seconds = timerState.remaining_seconds.value() - 1;
+
+					if (timerState.remaining_seconds.value() == 0) {
+						// Timer expired - pause playback
+						timerState.enabled = false;
+						timerState.remaining_seconds = std::nullopt;
+						timerEnabled.store(false);
+
+						// Pause the player
+						if (player.isPlaying()) {
+							player.toggle();
+							onSongStatusChange(SongStatus{getVolume()});
+						}
+					}
+				}
+			}
+		}
+	});
+}
 
 struct MusicService::Helper {
 	static void playSong(MusicService& self, const Song& song) {

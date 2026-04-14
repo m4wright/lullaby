@@ -18,7 +18,7 @@ class MusicStatusUpdater {
 	std::shared_mutex mtx{};
 	std::condition_variable_any cv{};
 
-	std::string currentStatusStr = "data: " + to_string(SongStatus{}) + "\n\n";
+	std::string currentStatusStr = "data: " + to_string(SongStatus{}, TimerState{}) + "\n\n";
 
 	bool update(WritableSink auto& sink, const std::string& status) {
 		if (!sink.is_writable()) {
@@ -33,7 +33,7 @@ public:
 	// to send the status again
 	bool waitForUpdate(WritableSink auto& sink) {
 		std::shared_lock lock(mtx);
-		
+
 		if (!update(sink, currentStatusStr)) {
 			return false;
 		}
@@ -46,9 +46,9 @@ public:
 		return currentStatusStr;
 	}
 
-	void updateStatus(const SongStatus& status) {
+	void updateStatus(const SongStatus& status, const TimerState& timerState = TimerState{}) {
 		std::unique_lock lock(mtx);
-		currentStatusStr = "data: " + to_string(status) + "\n\n";
+		currentStatusStr = "data: " + to_string(status, timerState) + "\n\n";
 		cv.notify_all();
 	}
 };
